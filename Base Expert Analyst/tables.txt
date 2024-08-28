@@ -471,9 +471,53 @@ erc1155_value -- For ERC1155 tokens, the number of tokens transferred (null for 
 from base.nft.ez_nft_transfers
 limit 5;
 Schema: price
-	dim_asset_metadata, 
-	ez_asset_metadata, 
-	ez_prices_hourly, 
+	dim_asset_metadata,
+select 
+blockchain, -- The blockchain network where the token exists (e.g., "ethereum", "base", etc.)
+blockchain_id, -- Unique identifier for the blockchain, often used in cross-chain contexts
+token_address, -- The contract address of the token on the blockchain
+provider, -- The data provider supplying the price information (e.g., "coingecko", "coinmarketcap")
+asset_id, -- Identifier used by the provider for this asset (not particularly useful for most queries)
+symbol, -- The trading symbol of the token (e.g., "ETH", "USDC")
+name -- The full name of the token (e.g., "Ethereum", "USD Coin")
+from base.price.dim_asset_metadata
+limit 5; 
+	ez_asset_metadata,
+select 
+blockchain, -- The blockchain network where the token exists (e.g., "ethereum", "base", etc.)
+token_address, -- The contract address of the token on the blockchain (null for native assets)
+asset_id, -- Unique identifier for the asset across providers and blockchains
+symbol, -- The trading symbol of the token (e.g., "ETH", "USDC")
+name, -- The full name of the token (e.g., "Ethereum", "USD Coin")
+decimals, -- The number of decimal places used to represent the token's smallest unit
+is_native, -- Boolean flag indicating if the asset is the native token of the blockchain (e.g., ETH for Ethereum)
+is_deprecated -- Boolean flag indicating if the token is no longer actively traded or maintained
+from base.price.ez_asset_metadata
+limit 5; 
+	ez_prices_hourly,
+select 
+blockchain, -- The blockchain network where the token exists (e.g., "ethereum", "base", etc.)
+hour, -- The hour for which the closing price was selected, used for filtering and joining with other hourly data
+token_address, -- The contract address of the token on the blockchain (null for native assets)
+symbol, -- The trading symbol of the token (e.g., "ETH", "USDC")
+name, -- The full name of the token (e.g., "Ethereum", "USD Coin")
+decimals, -- The number of decimal places used to represent the token's smallest unit
+price, -- The price of the token in USD terms, adjusted for decimals
+is_native, -- Boolean flag indicating if the asset is the native token of the blockchain (e.g., ETH for Ethereum)
+is_imputed, -- Boolean flag indicating if the price was carried forward or imputed due to low trading volume or deprecation
+is_deprecated -- Boolean flag indicating if the token is no longer actively traded or maintained
+from base.price.ez_prices_hourly
+limit 5; 
 	fact_prices_ohlc_hourly
+select 
+hour, -- The hour for which this candle data is relevant, used for filtering and joining with other hourly data
+provider, -- The data provider supplying the price information (e.g., "coingecko", "coinmarketcap")
+asset_id, -- Identifier used by the provider for this asset, can be joined with dim_asset_metadata alongside provider
+open, -- The opening price for the asset during this hour
+low, -- The lowest price for the asset during this hour
+high, -- The highest price for the asset during this hour
+close -- The closing price for the asset at the end of this hour, used in ez_prices_hourly
+from base.price.fact_prices_ohlc_hourly
+limit 5;
 
 
