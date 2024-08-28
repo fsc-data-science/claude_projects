@@ -1,0 +1,58 @@
+Schema: nft
+
+Standard Columns (present in all tables unless otherwise noted):
+- block_number: Unique identifier for each block, 1-to-1 with block_timestamp
+- block_timestamp: UTC timestamp of the block, primary index column for time-based queries
+- tx_hash: Unique identifier for each transaction, useful for transaction-specific analysis
+- event_index: Order of events within a block, can be used to order events within a transaction
+- origin_function_signature: Hexcode of the initial function called in the transaction
+- origin_from_address: Externally Owned Account (EOA) that initiated the transaction
+- origin_to_address: Initial contract address called in the transaction
+
+Note: All ez_ tables are pre-joined with relevant dim_ tables and include USD values using hourly closing prices where applicable.
+
+Table: ez_nft_sales
+Purpose: Records NFT sale events across various marketplaces.
+Key Columns:
+- event_type: Type of event, in this case "sale"
+- platform_address: Contract address of the NFT marketplace
+- platform_name: Name of the NFT marketplace (e.g., "opensea")
+- platform_exchange_version: Version of the platform's exchange contract
+- aggregator_name: Name of the aggregator used (if any) for cross-marketplace purchases
+- seller_address: Address of the NFT seller
+- buyer_address: Address of the NFT buyer
+- nft_address: Contract address of the NFT being sold
+- project_name: Name of the NFT project (can be null)
+- tokenid: ID of the specific NFT token being sold
+- erc1155_value: For ERC1155 tokens, the number of tokens sold (null for ERC721)
+- currency_symbol: Symbol of the currency used for the sale (e.g., "ETH")
+- currency_address: Contract address of the currency used (or "ETH" for Ethereum)
+- price: Sale price in the original currency
+- price_usd: Sale price converted to USD using hourly closing price
+- total_fees: Sum of platform_fee and creator_fee in the sale currency
+- platform_fee: Fee charged by the platform
+- creator_fee: Fee paid to the NFT creator/project (royalty)
+- total_fees_usd, platform_fee_usd, creator_fee_usd: USD values of fees
+- tx_fee: Transaction fee paid for the transaction, not included in total_fee
+- tx_fee_usd: Transaction fee converted to USD using hourly closing price
+
+Table: ez_nft_transfers
+Purpose: Tracks all NFT transfer events, including mints, transfers, and sales.
+Key Columns:
+- event_type: Type of event (e.g., "mint", "transfer", "sale")
+- nft_address: Contract address of the NFT being transferred
+- project_name: Name of the NFT project
+- nft_from_address: Address sending the NFT (0x0000000000000000000000000000000000000000 for mints)
+- nft_to_address: Address receiving the NFT
+- tokenid: ID of the specific NFT token being transferred
+- erc1155_value: For ERC1155 tokens, the number of tokens transferred (null for ERC721)
+Additional Column:
+- intra_event_index: Order of events within the same event_index, useful for ordering multiple transfers in a single transaction
+
+Common Usage Patterns:
+1. Use block_timestamp for time-based analysis and filtering of NFT activity.
+2. Join ez_nft_sales and ez_nft_transfers on (nft_address, tokenid, block_timestamp) to analyze the full lifecycle of NFTs.
+3. Aggregate sales data by project_name, platform_name, or time periods to identify trends in the NFT market.
+4. Use nft_from_address and nft_to_address to track ownership changes and identify significant collectors or sellers.
+5. Analyze platform_fee and creator_fee to understand the economics of different NFT marketplaces and projects.
+6. For ERC1155 tokens, pay attention to the erc1155_value to accurately count the number of tokens involved in each transaction.
