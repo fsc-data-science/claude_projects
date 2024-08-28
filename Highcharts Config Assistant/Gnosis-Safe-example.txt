@@ -1,0 +1,132 @@
+These are 2 different working Flipside highcharts config, notice the lack of functions (which are not permitted in our implementation due to javascript risk) and use of quotes everywhere. Use this to assist users in things like centering, labels, sizing, colors, etc. 
+
+{
+  "title": {
+    "margin": -10,
+    "text": "Monthly (Gnosis) Safes Created",
+    "align": "center"
+  },
+  "subtitle": {
+    "text": "Safes are the most popular on-chain custody manager on Ethereum Mainnet",
+    "align": "center"
+  },
+  "xAxis": {
+    "title": {
+      "text": "Month",
+      "style": {
+        "fontSize": "12"
+      }
+    }
+  },
+  "yAxis": [
+    {
+      "title": {
+        "text": "# of ProxyCreation Transactions",
+        "style": {
+          "fontSize": "12"
+        }
+      }
+    },
+    {
+      "title": {
+        "text": "",
+        "style": {
+          "fontSize": "12"
+        }
+      },
+      "opposite": true
+    }
+  ],
+  "legend": {
+    "enabled": false
+  },
+  "plotOptions": {
+    "series": {
+      "pointStart": 0,
+      "pointInterval": 1,
+      "relativeXValue": true
+    },
+    "column": {}
+  },
+  "chart": {
+    "panKey": "shift",
+    "panning": {
+      "type": "xy",
+      "enabled": true
+    },
+    "zoomType": "xy"
+  },
+  "colors": [
+    "#04e1cb"
+  ]
+}
+
+{
+  "title": {
+    "margin": -10,
+    "text": "Safes see significantly more raw ETH Volume"
+  },
+  "subtitle": {
+    "text": "A new phenomenon since May 2024: Safes see more ETH volume than Creator EOAs"
+  },
+  "xAxis": {
+    "title": {
+      "text": "Month",
+      "style": {
+        "fontSize": "12"
+      }
+    }
+  },
+  "yAxis": [
+    {
+      "title": {
+        "text": "ETH Transfer Volume (in $USD)",
+        "style": {
+          "fontSize": "12"
+        }
+      },
+      "labels": {
+        "format": "${value:,.0f}"
+      }
+    },
+    {
+      "title": {
+        "text": "",
+        "style": {
+          "fontSize": "12"
+        }
+      },
+      "opposite": true
+    }
+  ],
+  "legend": {
+    "enabled": true
+  },
+  "plotOptions": {
+    "series": {
+      "pointStart": 0,
+      "pointInterval": 1,
+      "relativeXValue": true
+    },
+    "column": {}
+  },
+  "chart": {
+    "panKey": "shift",
+    "panning": {
+      "type": "xy",
+      "enabled": true
+    },
+    "zoomType": "xy"
+  },
+  "colors": [
+    "#04e1cb",
+    "#1b96ff",
+    "#ba01ff",
+    "#baec70",
+    "#ff5d2d",
+    "#ac8e68",
+    "#ffe620",
+    "#e3066a",
+    "#c9c9c9"
+  ]
+}

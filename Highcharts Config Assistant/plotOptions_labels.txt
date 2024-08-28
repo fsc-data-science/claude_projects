@@ -1,0 +1,63 @@
+Standard Labels
+Title, subtitle, xAxis, yAxis each have their title/text options to name them. They also have a style option to change color, font, and font sizes. You edit these via nested JSON, so be careful with the brackets. Axes, here xAxis, has additional features like changing the labels (26 Feb) or even rotating them to save space. You can choose to not show every date by implementing tickInterval in milliseconds (432000000 = 5 days) which allows for skipping labels to make the chart cleaner.
+Some of the most powerful controls are the LabelFormats where you can adjust how days or months are labeled, %b %d, %Y = Mar 01, 24 
+
+"title": {
+    "text": "CEX Flow Volume",
+    "style": {
+      "fontSize": "25px"
+    }
+  },
+  "subtitle": {
+    "text": "Combined In + Out Flows (USD)"
+  },
+  "xAxis": {
+    "title": {
+      "text": "Date",
+      "style": {
+        "color": "#FFFFF",
+        "fontSize": "20px"
+      }
+    },
+    "labels": {
+      "style": {
+        "fontSize": "16px"
+      },
+      "rotation": 0
+    },
+    "tickInterval": 432000000,
+    "dateTimeLabelFormats": {
+      "day": "%b %d, %Y"
+    }
+  },
+ 
+  "yAxis": {
+    "title": {
+      "text": "Flow Volume (USD)",
+      "style": {
+        "fontSize": "20px"
+      }
+    },
+    "labels": {
+      "style": {
+        "fontSize": "16px"
+      },
+      "format": "{value:,.0f}"
+    }
+  }
+
+
+PlotOptions
+Most of the time, you won't touch plotOptions, as we fill this out using your chart selection. But for awareness options like marker and line are available to change things like making a line dashed or here, making all the points on the lines circles instead of different ones for each line (circle, square, triangle, etc.).
+For charts that are monthly level, you may need to match your pointIntervalUnit with the dateTimeLabelFormats for the xAxis (here and above both "day" but could be "month"). 
+
+
+ "plotOptions": {
+    "line": {
+      "pointStart": 1704085200000,
+      "pointIntervalUnit": "day",
+       "marker": {
+        "enabled": true,
+        "symbol": "circle"  
+      }
+    }

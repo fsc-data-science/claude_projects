@@ -1,0 +1,200 @@
+For incrementalizing a SQL query, defer users to the Incrementalizooor Claude Project. This is just general notes on 1 potential format for schemas, tables, procedures within a Fipside PRO Context.
+
+
+-- Step 1: Create schema if it doesn't exist
+CREATE SCHEMA IF NOT EXISTS pro_charliemarketplace.evm_snapshot;
+
+-- Step 2: Create table based on observation level
+CREATE TABLE IF NOT EXISTS pro_charliemarketplace.evm_snapshot.daily_nft_sales (
+    chain VARCHAR,
+    day_ DATE,
+    n_nft_sales_tx INTEGER,
+    nft_sales_volume_usd FLOAT,
+    usd_platform_plus_creator_fees FLOAT,
+    usd_platform_fees FLOAT,
+    usd_creator_fees FLOAT,
+    n_unique_sellers INTEGER,
+    n_unique_buyers INTEGER,
+    n_projects_with_sales INTEGER,
+    last_updated TIMESTAMP_NTZ
+);
+
+-- Step 3: Call the procedure
+CALL pro_charliemarketplace.evm_snapshot.update_daily_nft_sales();
+
+-- Step 4: Define the procedure with an intelligent lookback period
+CREATE OR REPLACE PROCEDURE pro_charliemarketplace.evm_snapshot.update_daily_nft_sales()
+RETURNS STRING
+LANGUAGE SQL 
+EXECUTE AS CALLER
+AS
+$$
+BEGIN
+MERGE INTO pro_charliemarketplace.evm_snapshot.daily_nft_sales AS target
+USING (
+    WITH eth_sales AS (
+        SELECT 
+            'ethereum' as chain,    
+            date_trunc('day', block_timestamp) as day_,
+            count(distinct tx_hash) as n_nft_sales_tx,
+            sum(price_usd) as nft_sales_volume_usd,
+            sum(total_fees_usd) as usd_platform_plus_creator_fees, 
+            sum(platform_fee_usd) as usd_platform_fees, 
+            sum(creator_fee_usd) as usd_creator_fees,
+            count(distinct seller_address) as n_unique_sellers,
+            count(distinct buyer_address) as n_unique_buyers,
+            count(distinct nft_address) as n_projects_with_sales
+        FROM ethereum.nft.ez_nft_sales 
+        WHERE block_timestamp >= DATEADD(day, -2, COALESCE((SELECT MAX(day_) FROM pro_charliemarketplace.evm_snapshot.daily_nft_sales WHERE chain = 'ethereum'), '1970-01-01'))
+            
+            AND event_type IN ('bid_won', 'sale')
+            AND currency_address IS NOT NULL
+        GROUP BY chain, day_
+    ),
+    op_sales AS (
+        SELECT
+            'optimism' as chain,    
+            date_trunc('day', block_timestamp) as day_,
+            count(distinct tx_hash) as n_nft_sales_tx,
+            sum(price_usd) as nft_sales_volume_usd,
+            sum(total_fees_usd) as usd_platform_plus_creator_fees, 
+            sum(platform_fee_usd) as usd_platform_fees, 
+            sum(creator_fee_usd) as usd_creator_fees,
+            count(distinct seller_address) as n_unique_sellers,
+            count(distinct buyer_address) as n_unique_buyers,
+            count(distinct nft_address) as n_projects_with_sales
+        FROM optimism.nft.ez_nft_sales 
+        WHERE block_timestamp >= DATEADD(day, -2, COALESCE((SELECT MAX(day_) FROM pro_charliemarketplace.evm_snapshot.daily_nft_sales WHERE chain = 'optimism'), '1970-01-01'))
+            
+            AND event_type IN ('bid_won', 'sale')
+            AND currency_address IS NOT NULL
+        GROUP BY chain, day_
+    ),
+    avax_sales AS (
+        SELECT
+            'avalanche' as chain,    
+            date_trunc('day', block_timestamp) as day_,
+            count(distinct tx_hash) as n_nft_sales_tx,
+            sum(price_usd) as nft_sales_volume_usd,
+            sum(total_fees_usd) as usd_platform_plus_creator_fees, 
+            sum(platform_fee_usd) as usd_platform_fees, 
+            sum(creator_fee_usd) as usd_creator_fees,
+            count(distinct seller_address) as n_unique_sellers,
+            count(distinct buyer_address) as n_unique_buyers,
+            count(distinct nft_address) as n_projects_with_sales
+        FROM avalanche.nft.ez_nft_sales 
+        WHERE block_timestamp >= DATEADD(day, -2, COALESCE((SELECT MAX(day_) FROM pro_charliemarketplace.evm_snapshot.daily_nft_sales WHERE chain = 'avalanche'), '1970-01-01'))
+            
+            AND event_type IN ('bid_won', 'sale')
+            AND currency_address IS NOT NULL
+        GROUP BY chain, day_
+    ),
+    arb_sales AS (
+        SELECT
+            'arbitrum' as chain,
+            date_trunc('day', block_timestamp) as day_,
+            count(distinct tx_hash) as n_nft_sales_tx,
+            sum(price_usd) as nft_sales_volume_usd,
+            sum(total_fees_usd) as usd_platform_plus_creator_fees, 
+            sum(platform_fee_usd) as usd_platform_fees, 
+            sum(creator_fee_usd) as usd_creator_fees,
+            count(distinct seller_address) as n_unique_sellers,
+            count(distinct buyer_address) as n_unique_buyers,
+            count(distinct nft_address) as n_projects_with_sales
+        FROM arbitrum.nft.ez_nft_sales 
+        WHERE block_timestamp >= DATEADD(day, -2, COALESCE((SELECT MAX(day_) FROM pro_charliemarketplace.evm_snapshot.daily_nft_sales WHERE chain = 'arbitrum'), '1970-01-01'))
+            
+            AND event_type IN ('bid_won', 'sale')
+            AND currency_address IS NOT NULL
+        GROUP BY chain, day_
+    ),
+    bsc_sales AS (
+        SELECT 
+            'bsc' as chain,
+            date_trunc('day', block_timestamp) as day_,
+            count(distinct tx_hash) as n_nft_sales_tx,
+            sum(price_usd) as nft_sales_volume_usd,
+            sum(total_fees_usd) as usd_platform_plus_creator_fees, 
+            sum(platform_fee_usd) as usd_platform_fees, 
+            sum(creator_fee_usd) as usd_creator_fees,
+            count(distinct seller_address) as n_unique_sellers,
+            count(distinct buyer_address) as n_unique_buyers,
+            count(distinct nft_address) as n_projects_with_sales
+        FROM bsc.nft.ez_nft_sales 
+        WHERE block_timestamp >= DATEADD(day, -2, COALESCE((SELECT MAX(day_) FROM pro_charliemarketplace.evm_snapshot.daily_nft_sales WHERE chain = 'bsc'), '1970-01-01'))
+            
+            AND event_type IN ('bid_won', 'sale')
+            AND currency_address IS NOT NULL
+        GROUP BY chain, day_
+    ),
+    base_sales AS (
+        SELECT 
+            'base' as chain,
+            date_trunc('day', block_timestamp) as day_,
+            count(distinct tx_hash) as n_nft_sales_tx,
+            sum(price_usd) as nft_sales_volume_usd,
+            sum(total_fees_usd) as usd_platform_plus_creator_fees, 
+            sum(platform_fee_usd) as usd_platform_fees, 
+            sum(creator_fee_usd) as usd_creator_fees,
+            count(distinct seller_address) as n_unique_sellers,
+            count(distinct buyer_address) as n_unique_buyers,
+            count(distinct nft_address) as n_projects_with_sales
+        FROM base.nft.ez_nft_sales 
+        WHERE block_timestamp >= DATEADD(day, -2, COALESCE((SELECT MAX(day_) FROM pro_charliemarketplace.evm_snapshot.daily_nft_sales WHERE chain = 'base'), '1970-01-01'))
+            
+            AND event_type IN ('bid_won', 'sale')
+            AND currency_address IS NOT NULL
+        GROUP BY chain, day_
+    ),
+    polygon_sales AS (
+        SELECT
+            'polygon' as chain,
+            date_trunc('day', block_timestamp) as day_,
+            count(distinct tx_hash) as n_nft_sales_tx,
+            sum(price_usd) as nft_sales_volume_usd,
+            sum(total_fees_usd) as usd_platform_plus_creator_fees, 
+            sum(platform_fee_usd) as usd_platform_fees, 
+            sum(creator_fee_usd) as usd_creator_fees,
+            count(distinct seller_address) as n_unique_sellers,
+            count(distinct buyer_address) as n_unique_buyers,
+            count(distinct nft_address) as n_projects_with_sales
+        FROM polygon.nft.ez_nft_sales 
+        WHERE block_timestamp >= DATEADD(day, -2, COALESCE((SELECT MAX(day_) FROM pro_charliemarketplace.evm_snapshot.daily_nft_sales WHERE chain = 'polygon'), '1970-01-01'))
+            
+            AND event_type IN ('bid_won', 'sale')
+            AND currency_address IS NOT NULL
+        GROUP BY chain, day_
+    )
+    SELECT * FROM eth_sales 
+    UNION ALL
+    SELECT * FROM op_sales 
+    UNION ALL 
+    SELECT * FROM avax_sales 
+    UNION ALL
+    SELECT * FROM arb_sales 
+    UNION ALL 
+    SELECT * FROM bsc_sales 
+    UNION ALL 
+    SELECT * FROM base_sales 
+    UNION ALL 
+    SELECT * FROM polygon_sales 
+) AS source
+ON target.chain = source.chain AND target.day_ = source.day_
+WHEN MATCHED THEN
+    UPDATE SET 
+        target.n_nft_sales_tx = source.n_nft_sales_tx,
+        target.nft_sales_volume_usd = source.nft_sales_volume_usd,
+        target.usd_platform_plus_creator_fees = source.usd_platform_plus_creator_fees,
+        target.usd_platform_fees = source.usd_platform_fees,
+        target.usd_creator_fees = source.usd_creator_fees,
+        target.n_unique_sellers = source.n_unique_sellers,
+        target.n_unique_buyers = source.n_unique_buyers,
+        target.n_projects_with_sales = source.n_projects_with_sales,
+        target.last_updated = CURRENT_TIMESTAMP()
+WHEN NOT MATCHED THEN
+    INSERT (chain, day_, n_nft_sales_tx, nft_sales_volume_usd, usd_platform_plus_creator_fees, usd_platform_fees, usd_creator_fees, n_unique_sellers, n_unique_buyers, n_projects_with_sales, last_updated)
+    VALUES (source.chain, source.day_, source.n_nft_sales_tx, source.nft_sales_volume_usd, source.usd_platform_plus_creator_fees, source.usd_platform_fees, source.usd_creator_fees, source.n_unique_sellers, source.n_unique_buyers, source.n_projects_with_sales, CURRENT_TIMESTAMP());
+
+RETURN 'Daily NFT sales data updated successfully';
+END;
+$$;

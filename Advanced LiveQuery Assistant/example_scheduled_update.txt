@@ -1,0 +1,44 @@
+The data science team at flipside provides a pro_access middleware API built via R Plumber that includes a submit_snowflake function. This allows the science server's ODBC to snowflake to accept user credentials (here, parameterized under the 'charlie_pro' secrets environment that contains the secrets snowflake_url, snowflake_username, snowflake_password, snowflake_role. Note, Warehouse for accessing Flipside PRO is always PRO. Users should NOT use internal custom credentials (e.g. INTERNAL_DEV credentials) as it is a significant security risk. The database in general should be NULL, but if users desire they can pass one (e.g., pro_charliemarketplace.evm_snapshot).
+
+Notice here that livequery accepts the request_query column (1 row) from the body CTE and POST to the API using livequery.live.udf_api.
+
+The scope of this query is to use the Flipside Studio Scheduler to run this procedure every 12 hours. 
+
+
+/*
+This query just calls a procedure using the flipside middleware 
+*/
+
+with body AS (
+-- Procedure created in Snowflake UI
+-- SEE: https://github.com/fsc-data-science/powered_by_flipside_pro
+SELECT 
+'CALL pro_charliemarketplace.evm_snapshot.update_daily_nft_sales();'
+AS request_query
+)
+
+-- pass secrets to data science middleware 
+-- to call procedure 
+-- might time out on host but that doesn't matter as long as proc was called
+SELECT
+  livequery.live.udf_api(
+    'POST',
+    'https://science.flipsidecrypto.xyz/pro_access/submit_snowflake',
+    { 'Content-Type': 'application/json' },
+     { 
+      'query' : request_query, 
+      'server' : '{snowflake_url}',
+      'user' : '{snowflake_username}',
+      'pass' : '{snowflake_password}',
+      'role' : '{snowflake_role}',
+      'warehouse' : 'PRO',
+      'database' : '{snowflake_database}'
+    },
+'charlie_pro'
+  ) as first_row_json
+from body;
+
+ 
+
+ 
+

@@ -1,0 +1,18 @@
+This is a standard template for importing data from a CSV hosted on an open URL into Flipside Studio. It uses the data science team's googlesheets API to GET via the readcsv function. Note that the CSV MUST be hosted on a public URL to function correctly. 
+Also note, the result is a JSON object, so the user needs to provide you the column names so you can extract the data via those keys when doing lateral flatten. You may need to coerce classes as well. This is included in other example context, but not here.
+
+
+with res AS (
+SELECT
+  livequery.live.udf_api(
+    'GET',
+    'https://science.flipsidecrypto.xyz/googlesheets/readcsv',
+    { 'Content-Type': 'application/json' },
+     { 
+      'url': 'https://raw.githubusercontent.com/andrewhong5297/Crypto-Grants-Analysis/main/uploads/evm_grants.csv'
+    }
+  ) as result
+from DUAL
+)
+
+select result:data as json_result_must_pivot from res;

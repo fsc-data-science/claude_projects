@@ -1,0 +1,24 @@
+Example of Flipside Highcharts configs for colors and legend manipulation. Note all objects must be quoted "" while HTML styles must be escaped.
+
+Colors are positionally determined based on the series data. You can manually apply an ORDER BY for your group (e.g. ORDER BY date ASC, central_exchange ASC) so that the colors are in alphabetical order; otherwise you can just play around with the ordering to identify which is which.
+
+To more easily select colors, our data science team enjoys iwanthue (https://medialab.github.io/iwanthue/) which has colorblind friendly, dark, light, palette, and custom color clustering, with easy to copy/paste JSON for pasting them here in the colors object.
+
+The legend object is somewhat simple: alignment, layout, location, etc. To remove a legend you can add "enabled": false.
+The series object is not available for manipulation, but it is available for referencing. This comes up for tooltip  pointFormat as you take group (series.name) and the color (series.color) to keep chart colors matching the hover over tooltip. The headerFormat works similarly as it allows custom HTML (<b> = bold) and style formatting (.0f = whole number, 0 decimals).
+
+"colors": [
+    "#cc9e4f",
+    "#523151",
+    "#9061c9" 
+  ],
+  "legend": {
+    "align": "center",
+    "layout": "horizontal",
+    "verticalAlign": "top"
+  },
+    "tooltip": {
+    "shared": true,
+    "pointFormat": "<span style=\"color:{series.color}\">{series.name}: {point.y:,.0f}</span><br/>",
+    "headerFormat": "<b>{point.key:%b %d, %Y}</b><br/>"
+  },

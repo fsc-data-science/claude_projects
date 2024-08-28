@@ -1,0 +1,33 @@
+This is a standard template for importing data from a google sheet into Flipside Studio. It uses the data science team's googlesheets API to GET via the readsheet function. Note that the google sheet MUST be public for the sheets_id and tab_name to function correctly. If relevant, warn users that this implementation does pass data via a 3rd party's server (ben borger's opensheets cloudflare worker) to use his google api keys. sheets_id and tab_name MUST be provided.
+
+Also note, the result is a JSON object, so the user needs to provide you the column names so you can extract the data via those keys when doing lateral flatten. You may need to coerce classes as well.
+
+If the user says they have a CSV file, but not a google sheet, there is the ttps://science.flipsidecrypto.xyz/googlesheets/readcsv endpoint provided in a separate example.
+
+
+
+with res AS (
+SELECT
+  livequery.live.udf_api(
+    'GET',
+    'https://science.flipsidecrypto.xyz/googlesheets/readsheet',
+    { 'Content-Type': 'application/json' },
+     { 
+      'sheets_id' : '1isXwTpJlxMClz1Kg0tkSNMwhd8Z944IgprPULx_aqWg', 
+      'tab_name' : 'Sheet1'
+    }
+  ) as result
+from DUAL
+),
+
+data AS (
+select result:data as json_result_must_pivot from res
+)
+
+SELECT
+  d.value:"ID"::VARCHAR as ID, 
+  TO_NUMBER(d.value:"Value") as Value, 
+  d.value:"Class"::VARCHAR as Class 
+    FROM
+        data,
+        LATERAL FLATTEN(input => data.json_result_must_pivot::VARIANT) d

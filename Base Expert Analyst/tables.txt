@@ -1,0 +1,303 @@
+Below is the BASE (EVM L2) database with example snowflake SQL code and comments for relevant facts for each table's primary columns (there are metadata columns rarely used not included here). In general, bias to ez_ tables when relevant. Notice that the same column may have a slightly different definition based on the context. Also notice that ez_ tables tend to have quality of life joins already included (e.g. USD pricing, contract names, symbols, etc.) while fact_ tables are barebones. This follows the classic STAR Schema (dims + facts = ez_) 
+
+Chain: base
+Schema: core
+ Tables: 
+	dim_contracts, 
+select 
+address, -- the contract address
+symbol, -- token symbol, if contract is a token (e.g. ERC20), can be null 
+name, -- contract name (if available) can be null
+decimals, -- token decimals if it is a token (e.g., ERC20), can be null
+created_block_number, -- block number when contract was created
+created_block_timestamp, -- block timestamp when contract was created
+created_tx_hash, -- tx hash when contract was created
+creator_address -- the externally owned account (EOA) that deployed the contract
+  from base.core.dim_contracts
+limit 5;
+	dim_contract_abis, 
+select 
+contract_address, -- the contract address
+abi, -- the abi that allows for decoding the contract
+abi_source, -- the offchain source of the ABI. Typically a scanner (e.g., etherscan) that developers push code to, but sometimes bytecode_matched which means the exact same contract code was deployed previously so the ABIs definitionally match. 
+bytecode -- the core contract code, computer readable, determines behavior of contracts. Rarely used except for matching.
+    from base.core.dim_contract_abis
+limit 5;
+	dim_labels, 
+select 
+blockchain, -- chain where contract address is labeled
+ creator, -- who made the label, typically flipside makes tags but users can also submit labels
+ address, -- contract address being labeled
+ address_name, -- name of contract if available
+ label_type, -- ALWAYS one of: dapp defi chadmin dex nft games cex token bridge operator 
+ label_subtype, -- varies by label_type 
+ project_name -- name of project owning the (contract) address if known
+  from base.core.dim_labels 
+limit 5;
+	ez_decoded_event_logs, 
+select 
+block_number, -- 1 to 1 with block_timestamp
+block_timestamp, -- UTC timestamp of block_number, this is the index column, good for filtering
+tx_hash, -- asking users for an example transaction can help with writing more scalable queries
+event_index, -- when a transaction interacts with a contract(s) the logs are in event order at the block level, you can order by this WITHIN a transaction hash as well, but it won't always start at 1.
+contract_address, -- the contract emitting the event log. Some contracts may not be in this table if they don't emit logs OR we don't have the ABI (application binary interface), the dim_contracts_abi table is used to make ez_ tables
+contract_name, -- only available when we are able to label a contract, sometimes null but we might still decode the logs without a name 
+event_name, -- this is derived from the ABI and the function signatures & topics of the contract calls 
+decoded_log, -- the easy to parse/read part of a log
+full_decoded_log -- overly detailed logs, often best to drop this column but it can help if you need the type of an object, e.g., uint112 or timestamp, etc. 
+ from base.core.ez_decoded_event_logs 
+limit 5;
+	ez_native_transfers,
+select 
+block_number, -- 1 to 1 with block_timestamp
+block_timestamp, -- UTC timestamp of block_number, this is the index column, good for filtering
+tx_hash, -- asking users for an example transaction can help with writing more scalable queries
+origin_from_address, -- the externally owned account (EOA) that initiated the transaction
+origin_to_address, -- the (contract) address the EOA called a function for (this is what initiates all related logs, other contract calls, etc.)
+origin_function_signature, -- the function (belonging to origin_to_address) being called by the origin_from_address (hexcode, 1:1 at contract level, but same hexcode can be a different function on a different contract) 
+from_address, -- the address losing the native asset (ETH, AVAX, MATIC, etc. depending on the chain, here, ETH)
+to_address, -- the address gaining the native asset (ETH, AVAX, MATIC, etc. depending on the chain, here, ETH)
+amount, -- the decimal adjusted & rounded amount of native asset being moved
+amount_precise_raw, -- non decimal adjusted amount of native asset being moved
+amount_precise, -- decimal adjusted, not rounded amount of native asset being moved
+amount_usd, -- the USD value of the amount of tokens moved using the hourly closing price of the asset using price data available in price schema.
+tx_position, -- index of where in the block_number the transaction occurred 
+trace_index, -- index of where the native transfer occurred in the trace, not all traces are native transfers; starts at 0
+identifier -- rarely used, identifies where in the stack the trace_index occurs, typically call_origin is most interesting but again, rarely used.
+  from base.core.ez_native_transfers
+limit 5; 
+	ez_token_transfers,
+select 
+block_number, -- 1 to 1 with block_timestamp
+block_timestamp, -- UTC timestamp of block_number, this is the index column, good for filtering
+tx_hash, -- asking users for an example transaction can help with writing more scalable queries
+event_index, -- when a transaction interacts with a contract(s) the logs are in event order, you can order by this WITHIN a transaction hash
+origin_function_signature, -- the function (belonging to origin_to_address) being called by the origin_from_address (hexcode, 1:1 at contract level, but same hexcode can be a different function on a different contract) 
+origin_from_address, -- the externally owned account (EOA) that initiated the transaction
+origin_to_address, -- the (contract) address the EOA called a function for (this is what initiates all related logs, other contract calls, etc.)
+contract_address, -- this is the token address for the token being transferred
+from_address, -- the address losing the token
+to_address, -- the address gaining the token
+raw_amount_precise, -- non decimal adjusted, not rounded amount of token being moved
+raw_amount, -- non decimal adjusted, rounded amount of token being moved
+amount_precise, -- decimal adjusted, not rounded amount of token being moved
+amount, -- the decimal adjusted & rounded amount of token being moved, in general use this column over others
+amount_usd, -- the USD value of the amount of tokens moved using the hourly closing price of the asset using price data available in price schema.
+decimals, -- token decimals if it is a token (e.g., ERC20), can be null
+symbol, -- token symbol, if contract is a token (e.g. ERC20), can be null 
+token_price, -- hourly closing price of the token using price schema. Null and modified later for transfers whose hour (using block_timestamp) are not yet complete
+has_decimal, -- binary flag on if decimal is known for the contract_address
+has_price -- binary flag on if a price is available for the closing hour
+  from base.core.ez_token_transfers
+limit 5; 
+	fact_blocks, 
+select 
+block_number, -- 1 to 1 with block_timestamp
+block_timestamp, -- UTC timestamp of block_number, this is the index column, good for filtering
+network, -- if the blockchain has multiple networks, it is identified here, almost always "mainnet" 
+blockchain, -- the blockchain name
+tx_count, -- count of transactions in the block
+difficulty, -- proof of work difficulty of block (0 on proof of stake chains)
+total_difficulty, -- proof of work difficulty across current and all preceding blocks (0 on proof of stake chains)
+extra_data, -- arbitrary data included by block proposer, sometimes a builder signature
+gas_limit, -- max computation units allowed in block
+gas_used, -- computation units used in block
+hash, -- block hash
+parent_hash, -- hash of previous block
+size, -- total bytes of data in block
+uncle_blocks, -- if competing blocks were proposed, identifies parallel blocks which were dropped
+block_header_json -- all data in a block header, generally not used, repeated on other columns. Contains baseFeePerGas which might be interesting for estimating cost of block production.
+  from base.core.fact_blocks
+limit 5;
+	fact_decoded_event_logs,
+select 
+block_number, -- 1 to 1 with block_timestamp
+block_timestamp, -- UTC timestamp of block_number, this is the index column, good for filtering
+tx_hash, -- asking users for an example transaction can help with writing more scalable queries
+event_index, -- when a transaction interacts with a contract(s) the logs are in event order at the block level, you can order by this WITHIN a transaction hash as well, but it won't always start at 1.
+contract_address, -- the contract emitting the event log. Some contracts may not be in this table if they don't emit logs OR we don't have the ABI (application binary interface), the dim_contracts_abi table is used to make ez_ tables
+event_name, -- this is derived from the ABI and the function signatures & topics of the contract calls 
+decoded_log, -- the easy to parse/read part of a log
+full_decoded_log -- overly detailed logs, often best to drop this column but it can help if you need the type of an object, e.g., uint112 or timestamp, etc. 
+from base.core.fact_decoded_event_logs
+limit 5;
+	fact_event_logs,
+select 
+block_number, -- 1 to 1 with block_timestamp
+block_timestamp, -- UTC timestamp of block_number, this is the index column, good for filtering
+tx_hash, -- asking users for an example transaction can help with writing more scalable queries
+origin_function_signature, -- the function (belonging to origin_to_address) being called by the origin_from_address (hexcode, 1:1 at contract level, but same hexcode can be a different function on a different contract)
+origin_from_address, -- the externally owned account (EOA) that initiated the transaction
+origin_to_address, -- the (contract) address the EOA called a function for (this is what initiates all related logs, other contract calls, etc.)
+event_index, -- when a transaction interacts with a contract(s) the logs are in event order at the block level, you can order by this WITHIN a transaction hash as well, but it won't always start at 1.
+contract_address, -- the contract emitting the event log. Some contracts may not be in this table if they don't emit logs OR we don't have the ABI (application binary interface), the dim_contracts_abi table is used to make ez_ tables
+topics, -- an array of hex codes. The first topic is the function called, if other items are in the array, they are typically the arguments to the function (topics[0])
+data -- input data provided to the origin_to_address by the origin_from_address when the origin_function_signature was called. In general, almost always use ez_decoded_event_logs instead of this table.  
+from base.core.fact_event_logs
+limit 5; 
+	fact_token_transfers,
+select 
+block_number, -- 1 to 1 with block_timestamp
+block_timestamp, -- UTC timestamp of block_number, this is the index column, good for filtering
+tx_hash, -- asking users for an example transaction can help with writing more scalable queries
+event_index, -- when a transaction interacts with a contract(s) the logs are in event order at the block level, you can order by this WITHIN a transaction hash as well, but it won't always start at 1.
+origin_function_signature, -- the function (belonging to origin_to_address) being called by the origin_from_address (hexcode, 1:1 at contract level, but same hexcode can be a different function on a different contract)
+origin_from_address, -- the externally owned account (EOA) that initiated the transaction
+origin_to_address, -- the (contract) address the EOA called a function for (this is what initiates all related logs, other contract calls, etc.)
+contract_address, -- the address of the token contract being transferred
+from_address, -- the address sending the tokens
+to_address, -- the address receiving the tokens
+raw_amount, -- non-decimal adjusted amount of tokens transferred, rounded
+raw_amount_precise -- non-decimal adjusted amount of tokens transferred, precise value
+from base.core.fact_token_transfers
+limit 5; 
+	fact_traces,
+select 
+block_number, -- 1 to 1 with block_timestamp
+block_timestamp, -- UTC timestamp of block_number, this is the index column, good for filtering
+tx_hash, -- unique identifier for the transaction
+from_address, -- the address initiating the trace (could be a contract or EOA)
+to_address, -- the address receiving the trace call (typically a contract)
+value, -- amount of native currency (e.g., ETH) sent with the trace, often 0 for contract calls
+value_precise_raw, -- non-decimal adjusted value of native currency, precise raw value
+value_precise, -- decimal adjusted value of native currency, precise value
+gas, -- maximum gas allocated for this trace
+gas_used, -- actual gas used by this trace
+input, -- input data for the trace, typically encoded function call and parameters
+output, -- output data from the trace, can be null
+type, -- type of trace (e.g., 'CALL', 'DELEGATECALL')
+identifier, -- unique identifier for the trace within the transaction
+data, -- JSON object containing detailed information about the trace
+tx_status, -- status of the overall transaction (e.g., 'SUCCESS')
+sub_traces, -- number of sub-traces spawned by this trace
+trace_status, -- status of this specific trace (e.g., 'SUCCESS')
+error_reason, -- reason for error if the trace failed, otherwise null
+trace_index -- index of the trace within the block level, but useful for ordering within a transaction as well.
+from base.core.fact_traces
+limit 5; 
+	fact_transactions
+select 
+block_number, -- 1 to 1 with block_timestamp
+block_timestamp, -- UTC timestamp of block_number, this is the index column, good for filtering
+block_hash, -- unique identifier for the block
+tx_hash, -- unique identifier for the transaction
+nonce, -- number of transactions sent from this address, used to prevent double-spending, 0 is the first user tx
+position, -- position of the transaction within the block
+origin_function_signature, -- the function being called in the transaction (hexcode)
+from_address, -- the address initiating the transaction
+to_address, -- the address receiving the transaction, often equivalent to the origin_to_address if it is a contract 
+value, -- amount of native currency (e.g., ETH) sent with the transaction
+value_precise_raw, -- non-decimal adjusted value of native currency, precise raw value
+value_precise, -- decimal adjusted value of native currency, precise value
+tx_fee, -- fee paid for the transaction in the native asset, e.g. ETH
+tx_fee_precise, -- precise fee paid for the transaction
+gas_price, -- price per unit of gas (computation units) used in the transaction
+effective_gas_price, -- actual price per unit of gas used
+gas_limit, -- maximum gas (computation units) the sender is willing to pay for in this transaction
+gas_used, -- actual amount of gas (computation units) used for this transaction
+l1_gas_price, -- gas price on the Layer 1 chain (e.g., Ethereum mainnet) which is shared among L2 transactions when the L2 block data is posted to L1.
+l1_gas_used, -- gas used on the Layer 1 chain 
+l1_fee_scalar, -- scaling factor for Layer 1 fees
+l1_fee, -- the part of the tx_fee paid on the Layer 1 chain
+l1_fee_precise, -- precise fee paid on the Layer 1 chain
+l1_submission_details, -- JSON object with details about Layer 1 submission
+cumulative_gas_used, -- total gas used in the block up to and including this transaction
+max_fee_per_gas, -- maximum fee per gas the sender is willing to pay
+max_priority_fee_per_gas, -- maximum priority fee per gas the sender is willing to pay to the proposer (base fees are burnt, priority fees are revenue to the block proposer)
+input_data, -- input data for the transaction, typically encoded function call and parameters
+status, -- status of the transaction (e.g., 'SUCCESS' or 'FAIL')
+r, -- r value of the ECDSA signature, X coordinate of point R, rarely used
+s, -- s value of the ECDSA signature, rarely used
+v -- v value, related to the recovery id for public key recovery in ECDSA, rarely used
+from base.core.fact_transactions
+limit 5;
+Schema: defi
+	dim_dex_liquidity_pools,
+select 
+creation_block, -- block number when the liquidity pool was created
+creation_time, -- timestamp when the liquidity pool was created
+creation_tx, -- transaction hash of the pool creation transaction
+platform, -- name of the DEX platform (e.g., 'uniswap-v2')
+factory_address, -- address of the factory contract that deployed this liquidity pool
+pool_address, -- unique address of the liquidity pool contract
+pool_name, -- human-readable name of the pool, typically combining token symbols
+tokens, -- JSON object containing addresses of tokens in the pool
+    -- tokens:token0 - address of the first token in the pair
+    -- tokens:token1 - address of the second token in the pair
+symbols, -- JSON object containing symbols of tokens in the pool
+    -- symbols:token0 - symbol of the first token
+    -- symbols:token1 - symbol of the second token
+decimals -- JSON object containing decimal places for each token
+    -- decimals:token0 - decimal places for the first token
+    -- decimals:token1 - decimal places for the second token
+from base.defi.dim_dex_liquidity_pools
+limit 5; 
+	ez_bridge_activity,
+select 
+-- Note: This table represents OUTBOUND bridging activity from the current chain.
+-- For INBOUND bridging data, refer to the crosschain schema, which includes both source and destination information.
+block_number, -- block number when the bridge transaction occurred
+block_timestamp, -- timestamp of the block when the bridge transaction occurred
+origin_from_address, -- original sender of the transaction
+origin_to_address, -- original recipient of the transaction (typically the bridge contract)
+origin_function_signature, -- function signature of the bridging operation
+tx_hash, -- unique identifier for the transaction
+event_index, -- index of the event within the transaction
+bridge_address, -- address of the bridge contract used
+event_name, -- name of the event emitted by the bridge contract
+platform, -- name of the bridging platform (e.g., 'across-v3')
+sender, -- address initiating the bridge transfer
+receiver, -- address receiving the bridged assets on the destination chain
+destination_chain_receiver, -- address receiving the assets on the destination chain (may differ from receiver)
+destination_chain, -- name of the destination blockchain
+destination_chain_id, -- numeric identifier of the destination blockchain
+token_address, -- contract address of the token being bridged
+token_symbol, -- symbol of the token being bridged
+amount_unadj, -- unadjusted (raw) amount of tokens being bridged
+amount, -- adjusted amount of tokens being bridged (considering token decimals)
+amount_usd -- USD value of the bridged amount using hourly closing price of the token_address via our price schema and block_timestamp
+from base.defi.ez_bridge_activity
+limit 5; 
+	ez_dex_swaps,
+select 
+block_number, -- 1 to 1 with block_timestamp
+block_timestamp, -- UTC timestamp of block_number, this is the index column, good for filtering
+tx_hash, -- asking users for an example transaction can help with writing more scalable queries
+origin_function_signature, -- the function (belonging to origin_to_address) being called by the origin_from_address (hexcode, 1:1 at contract level, but same hexcode can be a different function on a different contract)
+event_index, -- when a transaction interacts with a contract(s) the logs are in event order, you can order by this WITHIN a transaction hash
+origin_from_address, -- the externally owned account (EOA) that initiated the transaction
+origin_to_address, -- the (contract) address the EOA called a function for (this is what initiates all related logs, other contract calls, etc.)
+sender, -- address (often the router contract) (derived "from" address in Swap event) that interfaces most directly with the liquidity pool to handle the swap. 
+tx_to, -- receiver of the swapped tokens (derived "to" address in Swap event), can be an aggregator or router or different intermediary, etc.
+platform, -- name of the DEX platform (e.g., 'uniswap-v2')
+contract_address, -- the address for the liquidity pool where the swap occurs
+pool_name, -- human-readable name of the pool, typically combining token symbols and possibly the fee tier
+event_name, -- name of the event, most often "Swap", differs by DEX (platform)
+token_in, -- The contract address for the token going into the pool, the token "SOLD"
+symbol_in, -- The symbol for the token going into the pool, the token "SOLD"
+amount_in, -- amount of token going into the pool, adjusted for decimals.
+amount_in_unadj, -- amount of token going into the pool, not adjusted for decimals.
+amount_in_usd, -- the USD value of the amount of tokens going into the pool ("SOLD") using the hourly closing price of the asset using price data available in price schema. Will be null if price unavailable or the hour is not yet finished (modified later when the hour is finished.)
+token_out, -- The contract address for the token coming out of the pool, the token "BOUGHT" by the user
+symbol_out, -- The symbol for the token coming out of the pool, the token "BOUGHT" by the user
+amount_out, -- amount of token coming out of the pool, adjusted for decimals.
+amount_out_unadj, -- amount of token coming out of the pool, not adjusted for decimals.
+amount_out_usd -- the USD value of the amount of tokens coming out of the pool ("BOUGHT") using the hourly closing price of the asset using price data available in price schema. Will be null if price unavailable or the hour is not yet finished (modified later when the hour is finished.)
+from base.defi.ez_dex_swaps
+limit 5; 
+	ez_lending_borrows, 
+	ez_lending_deposits, 
+	ez_lending_flashloans, 
+	ez_lending_liquidations, 
+	ez_lending_repayments, 
+	ez_lending_withdraws
+Schema: nft
+	ez_nft_sales, 
+	ez_nft_transfers
+Schema: price
+	dim_asset_metadata, 
+	ez_asset_metadata, 
+	ez_prices_hourly, 
+	fact_prices_ohlc_hourly
+
+

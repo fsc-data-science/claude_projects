@@ -1,0 +1,29 @@
+Livequery is able to read from the Flipside duckdb cache of past query runs. Every query has its latest run stored in duckdb for fast access. Using the api/v1/queries/QUERYIDHERE/data/latest format you can pull the results in JSON form to R, Python, Flipside SQL Studio, or any other tool. Here, (somewhat recursively) we pull the latest run of a query, use lateral flatten and the known column names of the data (JSON keys) to extract the data and coerce it to characters, dates, and numbers. 
+
+This is useful for separating a query run from filters on that query (e.g. you have all the data at the daily level for the past 3 years. Instead of re-running the data for new date filters, simply pull the daily level data that is already calculated and filter that. It is a significant speedup and reduces costs since it is just reading a JSON cache). 
+
+Use this (remember to ask for column names and possibly the classes to coerce to) to help users pull data from flipside json caches. Note, these caches are not permanent so it may help to remind the user to make a proper table, proc pipeline, and use the flipside_pro API instead of this. But it's fine for hacky short term needs. Also if the user mentions incremental pipelines, remind them there is an existing Incrementalizer Claude Project available for that.
+
+
+with historic_nft AS (
+select 
+      livequery.live.udf_api (
+'https://flipsidecrypto.xyz/api/v1/queries/5f592665-9640-409e-9aee-bf83bc4a27c1/data/latest'
+      ):data  as json_data
+),
+-- is there a way to not have to know the columns?
+
+    SELECT
+        d.value:"CHAIN"::VARCHAR AS chain,
+        d.value:"DAY_"::date AS day_,
+        TO_NUMBER(d.value:"N_NFT_SALES_TX") AS N_NFT_SALES_TX,
+        TO_NUMBER(d.value:"NFT Sales Volume (USD)") AS "NFT Sales Volume (USD)",
+TO_NUMBER(d.value:"USD_PLATFORM_PLUS_CREATOR_FEES") AS USD_PLATFORM_PLUS_CREATOR_FEES,
+TO_NUMBER(d.value:"USD_PLATFORM_FEES") AS USD_PLATFORM_FEES,
+TO_NUMBER(d.value:"USD_CREATOR_FEES") AS USD_CREATOR_FEES,
+TO_NUMBER(d.value:"N_UNIQUE_SELLERS") AS N_UNIQUE_SELLERS,
+TO_NUMBER(d.value:"N_UNIQUE_BUYERS") AS N_UNIQUE_BUYERS,
+TO_NUMBER(d.value:"N_PROJECTS_WITH_SALES") AS N_PROJECTS_WITH_SALES
+    FROM
+        historic_nft,
+        LATERAL FLATTEN(input => historic_nft.json_data::VARIANT) d

@@ -1,0 +1,1 @@
+Each Folder corresponds to a Claude Project. Each file within the folder should be a txt file containing relevant prompts, instructions, examples, etc. to add to a Project context.

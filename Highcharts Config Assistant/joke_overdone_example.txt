@@ -1,0 +1,163 @@
+This is a joke-y overdone example of a highcahrts config that is compliant. Note the excessive use of html styling, useful to be aware of but you may rarely end up using this. But know it is possible!
+
+
+{
+  "title": {
+    "text": "U.S Solar Employment Growth",
+    "align": "center",
+    "style": {
+      "color": "#926fc7",
+      "fontSize": "50px",
+      "fontFamily": "'Times New Roman', serif",
+      "fontWeight": "bold",
+      "textShadow": "3px 3px 0px #eee, 6px 6px 0px rgba(68, 68, 68, 0.6)",
+      "wordSpacing": "10px",
+      "letterSpacing": "5px",
+      "textTransform": "uppercase"
+    }
+  },
+  "subtitle": {
+    "text": "By Job Category. Source: <a href='https://irecusa.org/programs/solar-jobs-census/' target='_blank' style='color: #0c5460; font-weight: bold; text-decoration: none;'>IREC</a>.",
+    "align": "left",
+    "style": {
+      "color": "#c57b3d",
+      "opacity": "0.75",
+      "fontSize": "18px",
+      "fontStyle": "italic",
+      "fontFamily": "'Courier New', monospace",
+      "textShadow": "1px 1px 2px rgba(0, 0, 0, 0.5)"
+    }
+  },
+  "xAxis": {
+    "title": {
+      "text": "Year",
+      "style": {
+        "color": "#ca5477",
+        "fontSize": "18px",
+        "fontFamily": "'Times New Roman', serif",
+        "fontWeight": "bold",
+        "textShadow": "3px 3px 0px #eee, 6px 6px 0px rgba(68, 68, 68, 0.6)",
+        "wordSpacing": "10px",
+        "letterSpacing": "5px"
+      }
+    },
+    "labels": {
+      "style": {
+        "color": "#ca5477",
+        "fontSize": "18px",
+        "fontFamily": "'Arial', sans-serif",
+        "fontWeight": "bold",
+        "textShadow": "3px 3px 0px #eee, 6px 6px 0px rgba(68, 68, 68, 0.6)",
+        "wordSpacing": "10px",
+        "letterSpacing": "5px"
+      }
+    },
+    "lineColor": "#ca5477",
+    "tickColor": "#ca5477",
+    "tickWidth": 20,
+    "accessibility": {
+      "rangeDescription": "Range: 2010 to 2020"
+    },
+    "gridLineWidth": 10
+  },
+  "chart": {
+    "panKey": "shift",
+    "panning": {
+      "type": "xy",
+      "enabled": true
+    },
+    "zoomType": "xy"
+  },
+  "yAxis": {
+    "title": {
+      "text": "Number of Employees",
+      "style": {
+        "color": "#4BB543",
+        "fontSize": "1-px",
+        "fontFamily": "'Times New Roman', serif",
+        "fontWeight": "bold",
+        "wordSpacing": "10px",
+        "letterSpacing": "1px"
+      }
+    },
+    "labels": {
+      "style": {
+        "color": "#4BB543",
+        "fontSize": "15px",
+        "fontFamily": "'Arial', sans-serif",
+        "fontWeight": "bold",
+        "wordSpacing": "5px",
+        "letterSpacing": "2px"
+      },
+      "format": "{value}"
+    },
+    "lineColor": "#4BB543",
+    "tickColor": "#4BB543",
+    "tickWidth": 15,
+    "gridLineColor": "#4BB543",
+    "gridLineWidth": 5
+  },
+  "colors": [
+    "#04e1cb",
+    "#1b96ff",
+    "#ba01ff",
+    "#baec70",
+    "#ff5d2d",
+    "#ac8e68",
+    "#ffe620",
+    "#e3066a",
+    "#c9c9c9"
+  ],
+   "legend": {
+    "align": "center",
+    "layout": "horizontal",
+    "verticalAlign": "top",
+     "symbolWidth": 5,
+    "symbolHeight": 20,
+    "itemStyle": {
+      "color": "#946fc7",
+      "fontSize": "14px",
+      "fontStyle": "italic",
+      "fontWeight": "bold"
+    }
+  },
+  "tooltip": {
+    "style": {
+      "color": "#333333",
+      "fontSize": "12px"
+    },
+    "shared": true,
+    "pointFormat": "<span style='color:{series.color};'>{series.name}:</span> {point.y}<br/>",
+    "headerFormat": "<b style='font-size: 14px;'>{point.x: %b, %Y}</b><br/>"
+  },
+  "exporting": {
+    "buttons": {
+      "contextButton": {
+        "menuItems": [
+          "downloadPNG",
+          "downloadJPEG",
+          "downloadPDF",
+          "downloadSVG"
+        ]
+      }
+    },
+    "enabled": true
+  },
+   "credits": {
+    "enabled": false
+  },
+  "plotOptions": {
+    "line": {
+      "pointStart": 1262322000000,
+      "pointIntervalUnit": "year",
+      "relativeXValue": true,
+      "dataLabels": {
+        "color": "#4cab98",
+        "style": {
+          "textOutline": "none"
+        },
+        "enabled": true
+      }
+    }
+  }
+}

@@ -1,0 +1,58 @@
+Below is a livequery call that allows for a user to use the Flipside Studio parameters (here, {{YOURADDRESS}}) inside of a livequery call. In this context, a separate query and table was already created (in flipside pro) that identifies transactions (tx_hash), on different chains for every user address. Because it is faster to lookup an address in a precalculated table (instead of running the original query at point of use) this enables extremely fast address lookups for dashboards.
+
+The 2 key things to note here are (1) extra escaping '' of values inside the request_query. This enables to call to correctly quote the user's address (0x....). (2) that the result of the API call is in JSON format. This has to be both lateral flattened AND have the keys explicitly extracted (d.value:"KEYHERE") - in this case none of these values need to be coerced to integer or float or timestamp but that also might be required.
+
+Please use this knowledge to assist users in both managing parameter filters inside livequery calls and for lateral flattening the resulting data. You must confirm your user has provided the column names of the table they're querying, without those you can't extract the keys from the resulting JSON. Don't guess, if they didn't provide you column names when you need it, ask for it or put <PLACEHOLDERCOLUMN> or similar in obvious text for them to swap in (with a reminder to coerce classes).
+
+
+
+/*
+livequery.live.udf_api(
+  [method,]
+  url,
+  [headers,]
+  [data,]
+[secret]
+*/
+
+with body AS (
+-- NOTE, need to carefully manage single ' and double " quotes in query text
+-- use escapes '' 
+SELECT 
+'select * from pro_charliemarketplace.misc.lifi_hack where user_address = lower(''{{YOURADDRESS}}'')' 
+AS request_query
+),
+
+res_ AS (
+SELECT
+  livequery.live.udf_api(
+    'POST',
+    'https://science.flipsidecrypto.xyz/pro_access/submit_snowflake',
+    { 'Content-Type': 'application/json' },
+     { 
+      'query' : request_query, 
+      'server' : '{snowflake_url}',
+      'user' : '{snowflake_username}',
+      'pass' : '{snowflake_password}',
+      'role' : '{snowflake_role}',
+      'warehouse' : 'PRO',
+      'database' : '{snowflake_database}'
+    },
+'charlie_pro'
+  ) as json_data
+from body
+),
+
+lifi_historic_tx AS (
+    SELECT
+        d.value:"CHAIN" AS chain,
+        d.value:"USER_ADDRESS" AS user_address,
+        d.value:"TX_HASH" AS tx_hash
+    FROM
+        res_,
+        LATERAL FLATTEN(input => res_.json_data:data::VARIANT) d
+)
+
+select *
+ from lifi_historic_tx
+;
