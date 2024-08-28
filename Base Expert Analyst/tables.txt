@@ -285,15 +285,191 @@ amount_out_unadj, -- amount of token coming out of the pool, not adjusted for de
 amount_out_usd -- the USD value of the amount of tokens coming out of the pool ("BOUGHT") using the hourly closing price of the asset using price data available in price schema. Will be null if price unavailable or the hour is not yet finished (modified later when the hour is finished.)
 from base.defi.ez_dex_swaps
 limit 5; 
-	ez_lending_borrows, 
-	ez_lending_deposits, 
-	ez_lending_flashloans, 
-	ez_lending_liquidations, 
-	ez_lending_repayments, 
+	ez_lending_borrows,
+select 
+block_number, -- 1 to 1 with block_timestamp
+block_timestamp, -- UTC timestamp of block_number, this is the index column, good for filtering
+tx_hash, -- asking users for an example transaction can help with writing more scalable queries
+contract_address, -- the contract address where the borrow event occurred
+event_name, -- name of the event, in this case "Borrow"
+event_index, -- when a transaction interacts with a contract(s) the logs are in event order, you can order by this WITHIN a transaction hash
+origin_function_signature, -- the function (belonging to origin_to_address) being called by the origin_from_address (hexcode, 1:1 at contract level, but same hexcode can be a different function on a different contract)
+origin_from_address, -- the externally owned account (EOA) that initiated the transaction
+origin_to_address, -- the (contract) address the EOA called a function for (this is what initiates all related logs, other contract calls, etc.)
+platform, -- name of the lending platform (e.g., "Granary")
+protocol_market, -- address of the specific market within the lending protocol
+borrower, -- address of the account borrowing the tokens
+token_address, -- contract address of the borrowed token
+token_symbol, -- symbol of the borrowed token
+amount_unadj, -- unadjusted (raw) amount of tokens borrowed
+amount, -- adjusted amount of tokens borrowed (considering token decimals)
+amount_usd -- USD value of the borrowed amount using hourly closing price of the token
+from base.defi.ez_lending_borrows
+limit 5; 
+	ez_lending_deposits,
+select 
+block_number, -- 1 to 1 with block_timestamp
+block_timestamp, -- UTC timestamp of block_number, this is the index column, good for filtering
+tx_hash, -- asking users for an example transaction can help with writing more scalable queries
+contract_address, -- the contract address where the deposit event occurred
+event_name, -- name of the event, in this case "Deposit"
+event_index, -- when a transaction interacts with a contract(s) the logs are in event order, you can order by this WITHIN a transaction hash
+origin_function_signature, -- the function (belonging to origin_to_address) being called by the origin_from_address (hexcode, 1:1 at contract level, but same hexcode can be a different function on a different contract)
+origin_from_address, -- the externally owned account (EOA) that initiated the transaction
+origin_to_address, -- the (contract) address the EOA called a function for (this is what initiates all related logs, other contract calls, etc.)
+platform, -- name of the lending platform (e.g., "Granary")
+protocol_market, -- address of the specific market within the lending protocol
+depositor, -- address of the account depositing the tokens
+token_address, -- contract address of the deposited token
+token_symbol, -- symbol of the deposited token
+amount_unadj, -- unadjusted (raw) amount of tokens deposited
+amount, -- adjusted amount of tokens deposited (considering token decimals)
+amount_usd -- USD value of the deposited amount using hourly closing price of the token
+from base.defi.ez_lending_deposits
+limit 5; 
+	ez_lending_flashloans,
+select 
+block_number, -- 1 to 1 with block_timestamp
+block_timestamp, -- UTC timestamp of block_number, this is the index column, good for filtering
+tx_hash, -- asking users for an example transaction can help with writing more scalable queries
+contract_address, -- the contract address where the flashloan event occurred
+event_name, -- name of the event, in this case "FlashLoan"
+event_index, -- when a transaction interacts with a contract(s) the logs are in event order, you can order by this WITHIN a transaction hash
+origin_function_signature, -- the function (belonging to origin_to_address) being called by the origin_from_address (hexcode, 1:1 at contract level, but same hexcode can be a different function on a different contract)
+origin_from_address, -- the externally owned account (EOA) that initiated the transaction
+origin_to_address, -- the (contract) address the EOA called a function for (this is what initiates all related logs, other contract calls, etc.)
+platform, -- name of the lending platform (e.g., "Aave V3")
+initiator, -- address of the account initiating the flashloan
+target, -- address of the contract receiving the flashloan
+protocol_market, -- address of the specific market within the lending protocol
+flashloan_token, -- contract address of the token being borrowed in the flashloan
+flashloan_token_symbol, -- symbol of the token being borrowed in the flashloan
+flashloan_amount_unadj, -- unadjusted (raw) amount of tokens borrowed in the flashloan
+flashloan_amount, -- adjusted amount of tokens borrowed in the flashloan (considering token decimals)
+flashloan_amount_usd, -- USD value of the borrowed amount using hourly closing price of the token
+premium_amount_unadj, -- unadjusted (raw) amount of the premium charged for the flashloan
+premium_amount, -- adjusted amount of the premium charged for the flashloan (considering token decimals)
+premium_amount_usd -- USD value of the premium amount using hourly closing price of the token
+from base.defi.ez_lending_flashloans
+limit 5; 
+	ez_lending_liquidations,
+select 
+block_number, -- 1 to 1 with block_timestamp
+block_timestamp, -- UTC timestamp of block_number, this is the index column, good for filtering
+tx_hash, -- asking users for an example transaction can help with writing more scalable queries
+contract_address, -- the contract address where the liquidation event occurred
+event_name, -- name of the event (e.g., "AbsorbCollateral" or "LiquidateBorrow")
+event_index, -- when a transaction interacts with a contract(s) the logs are in event order, you can order by this WITHIN a transaction hash
+origin_function_signature, -- the function (belonging to origin_to_address) being called by the origin_from_address (hexcode, 1:1 at contract level, but same hexcode can be a different function on a different contract)
+origin_from_address, -- the externally owned account (EOA) that initiated the transaction
+origin_to_address, -- the (contract) address the EOA called a function for (this is what initiates all related logs, other contract calls, etc.)
+platform, -- name of the lending platform (e.g., "Compound V3", "Moonwell")
+liquidator, -- address of the account performing the liquidation
+borrower, -- address of the account being liquidated
+protocol_market, -- address of the specific market within the lending protocol
+collateral_token, -- contract address of the token being liquidated as collateral
+collateral_token_symbol, -- symbol of the token being liquidated as collateral
+amount_unadj, -- unadjusted (raw) amount of collateral tokens liquidated
+amount, -- adjusted amount of collateral tokens liquidated (considering token decimals)
+amount_usd, -- USD value of the liquidated collateral amount using hourly closing price of the token
+debt_token, -- contract address of the debt token being repaid in the liquidation
+debt_token_symbol -- symbol of the debt token being repaid in the liquidation
+from base.defi.ez_lending_liquidations
+limit 5; 
+	ez_lending_repayments,
+select 
+block_number, -- 1 to 1 with block_timestamp
+block_timestamp, -- UTC timestamp of block_number, this is the index column, good for filtering
+tx_hash, -- asking users for an example transaction can help with writing more scalable queries
+contract_address, -- the contract address where the repayment event occurred
+event_name, -- name of the event, in this case "Repay"
+event_index, -- when a transaction interacts with a contract(s) the logs are in event order, you can order by this WITHIN a transaction hash
+origin_function_signature, -- the function (belonging to origin_to_address) being called by the origin_from_address (hexcode, 1:1 at contract level, but same hexcode can be a different function on a different contract)
+origin_from_address, -- the externally owned account (EOA) that initiated the transaction
+origin_to_address, -- the (contract) address the EOA called a function for (this is what initiates all related logs, other contract calls, etc.)
+platform, -- name of the lending platform (e.g., "Granary")
+payer, -- address of the account making the repayment
+borrower, -- address of the account whose loan is being repaid (can be the same as payer)
+protocol_market, -- address of the specific market within the lending protocol
+token_address, -- contract address of the token being repaid
+token_symbol, -- symbol of the token being repaid
+amount_unadj, -- unadjusted (raw) amount of tokens repaid
+amount, -- adjusted amount of tokens repaid (considering token decimals)
+amount_usd -- USD value of the repaid amount using hourly closing price of the token
+from base.defi.ez_lending_repayments
+limit 5; 
 	ez_lending_withdraws
+select 
+block_number, -- 1 to 1 with block_timestamp
+block_timestamp, -- UTC timestamp of block_number, this is the index column, good for filtering
+tx_hash, -- asking users for an example transaction can help with writing more scalable queries
+contract_address, -- the contract address where the withdrawal event occurred
+event_name, -- name of the event, in this case "Withdraw"
+event_index, -- when a transaction interacts with a contract(s) the logs are in event order, you can order by this WITHIN a transaction hash
+origin_function_signature, -- the function (belonging to origin_to_address) being called by the origin_from_address (hexcode, 1:1 at contract level, but same hexcode can be a different function on a different contract)
+origin_from_address, -- the externally owned account (EOA) that initiated the transaction
+origin_to_address, -- the (contract) address the EOA called a function for (this is what initiates all related logs, other contract calls, etc.)
+platform, -- name of the lending platform (e.g., "Granary")
+depositor, -- address of the account withdrawing the tokens (usually the same as origin_from_address)
+protocol_market, -- address of the specific market within the lending protocol
+token_address, -- contract address of the token being withdrawn
+token_symbol, -- symbol of the token being withdrawn
+amount_unadj, -- unadjusted (raw) amount of tokens withdrawn
+amount, -- adjusted amount of tokens withdrawn (considering token decimals)
+amount_usd -- USD value of the withdrawn amount using hourly closing price of the token
+from base.defi.ez_lending_withdraws
+limit 5;
 Schema: nft
-	ez_nft_sales, 
-	ez_nft_transfers
+	ez_nft_sales,
+select 
+block_number, -- 1 to 1 with block_timestamp
+block_timestamp, -- UTC timestamp of block_number, this is the index column, good for filtering
+tx_hash, -- asking users for an example transaction can help with writing more scalable queries
+origin_from_address, -- the externally owned account (EOA) that initiated the transaction
+origin_to_address, -- the (contract) address the EOA called a function for (this is what initiates all related logs, other contract calls, etc.)
+origin_function_signature, -- the function (belonging to origin_to_address) being called by the origin_from_address (hexcode, 1:1 at contract level, but same hexcode can be a different function on a different contract)
+event_index, -- when a transaction interacts with a contract(s) the logs are in event order at the block level, you can order by this WITHIN a transaction hash as well, but it won't always start at 1.
+event_type, -- Type of event, in this case "sale"
+platform_address, -- Contract address of the NFT marketplace platform
+platform_name, -- Name of the NFT marketplace platform (e.g., "opensea")
+platform_exchange_version, -- Version of the platform's exchange contract
+aggregator_name, -- Name of the aggregator used (if any) for cross-marketplace purchases
+seller_address, -- Address of the NFT seller
+buyer_address, -- Address of the NFT buyer
+nft_address, -- Contract address of the NFT being sold
+project_name, -- Name of the NFT project (can be null)
+tokenid, -- ID of the specific NFT token being sold
+erc1155_value, -- For ERC1155 tokens, the number of tokens sold (null for ERC721)
+currency_symbol, -- Symbol of the currency used for the sale (e.g., "ETH")
+currency_address, -- Contract address of the currency used (or "ETH" for Ethereum)
+price, -- Sale price in the original currency
+price_usd, -- Sale price converted to USD using hourly closing price for the currency
+total_fees, -- platform fee + creator fee (royalty) paid in the sale currency
+platform_fee, -- Fee charged by the platform
+creator_fee, -- Fee paid to the NFT creator/project (royalty)
+total_fees_usd, -- Total fees converted to USD
+platform_fee_usd, -- Platform fee converted to USD
+creator_fee_usd, -- Creator fee converted to USD
+tx_fee, -- Transaction fee paid for the transaction, not included in total_fee
+tx_fee_usd, -- Transaction fee converted to USD using hourly closing price of the chain's transaction token (e.g. ETH)
+from base.nft.ez_nft_sales
+limit 5; 
+	ez_nft_transfers,
+select 
+block_number, -- 1 to 1 with block_timestamp
+block_timestamp, -- UTC timestamp of block_number, this is the index column, good for filtering
+tx_hash, -- asking users for an example transaction can help with writing more scalable queries
+event_index, -- when a transaction interacts with a contract(s) the logs are in event order at the block level, you can order by this WITHIN a transaction hash as well, but it won't always start at 1.
+intra_event_index, -- order of events within the same event_index, useful for ordering multiple transfers in a single transaction
+event_type, -- Type of event (e.g., "mint", "transfer", "sale")
+nft_address, -- Contract address of the NFT being transferred
+project_name, -- Name of the NFT project
+nft_from_address, -- Address sending the NFT (0x0000000000000000000000000000000000000000 for mints)
+nft_to_address, -- Address receiving the NFT
+tokenid, -- ID of the specific NFT token being transferred
+erc1155_value -- For ERC1155 tokens, the number of tokens transferred (null for ERC721)
+from base.nft.ez_nft_transfers
+limit 5;
 Schema: price
 	dim_asset_metadata, 
 	ez_asset_metadata, 
