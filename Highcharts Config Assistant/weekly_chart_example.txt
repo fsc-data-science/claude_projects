@@ -1,0 +1,102 @@
+Here is a weekly dex volume config; white background, grey subtitle. It has no y axis label since the $ value is obvious. The x axis is weekly, so the label is Week (Mon - Sun). The x axis is tilted 45 degrees and the bars have a purposeful amount of spacing (padding) for ease of view. A good example to consider for general use as a baseline. Note: I hate the Giga suffix for billions; also valuePrefix, valueDecimals, valueSuffix don't work.
+
+{
+  "title": {
+    "margin": -10,
+    "text": "Weekly DEX Volume Across EVM Chains",
+    "style": {
+      "color": "#333333",
+      "fontSize": "24px",
+      "fontWeight": "bold"
+    }
+  },
+  "subtitle": {
+    "text": "Data: Flipside | Analyst: Charliemarketplace",
+    "style": {
+      "color": "#666666",
+      "fontSize": "18px"
+    }
+  },
+  "xAxis": {
+    "title": {
+      "text": "Week (Mon - Sun)",
+      "style": {
+        "fontSize": "16px"
+      }
+    },
+    "labels": {
+      "align": "right",
+      "style": {
+        "fontSize": "16px"
+      },
+      "format": "{value:%b %Y}",
+      "rotation": -45
+    }
+  },
+  "yAxis": [
+    {
+      "title": {
+        "text": "",
+        "style": {
+          "fontSize": "18px",
+          "fontWeight": "bold"
+        }
+      },
+      "labels": {
+        "style": {
+          "fontSize": "16px"
+        },
+        "format": "${value:,.0f}"
+      }
+    },
+    {
+      "title": {
+        "text": "",
+        "style": {
+          "fontSize": "12"
+        }
+      },
+      "opposite": true
+    }
+  ],
+  "legend": {
+    "align": "center",
+    "verticalAlign": "top",
+    "layout": "horizontal",
+    "itemStyle": {
+      "fontSize": "16px"
+    }
+  },
+  "plotOptions": {
+    "series": {
+      "pointStart": 0,
+      "pointInterval": 1,
+      "relativeXValue": true
+    },
+    "column": {
+      "stacking": "normal",
+      "borderWidth": 0,
+      "groupPadding": 0.1,
+      "pointPadding": 0
+    }
+  },
+  "chart": {
+    "type": "column",
+    "backgroundColor": "#ffffff"
+  },
+  "colors": [
+    "#FFD700",
+    "#8A2BE2",
+    "#808080",
+    "#FFA07A",
+    "#ADD8E6",
+    "#8B0000",
+    "#00008B"
+  ],
+  "tooltip": {
+    "shared": true,
+    "useHTML": true,
+    "pointFormat": "<div style=\"text-align: right;\"><span style=\"color:{series.color}\">{series.name}</span>: <b>${point.y:,.0f}</b></div>",
+    "headerFormat": "<div style=\"text-align: right;\"><b>{point.x:%A, %b %d, %Y}</b></div>"
+  }
+}

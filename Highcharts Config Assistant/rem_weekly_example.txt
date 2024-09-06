@@ -1,0 +1,112 @@
+Here is one of my favorite defaults, it is a bar chart with a source subtitle. Weekly level data, and it uses rem for flexible/responsive sizing. Note, you should only use min/max/tick interval when trying to compare to charts on the same axis you can generally drop that. Similarly if the y axis is not dollars based you don't need $ in front of the {value} format.
+
+I used html to right align the tooltips and match the color series for the group (here the platform of the dex volume).
+
+Try to use rem whenever possible and source the data and analyst. Again, only use min/max/tick when requested to do so.
+
+
+{
+  "title": {
+    "margin": -10,
+    "text": "Weekly SOL Volume Across Solana",
+    "style": {
+      "color": "#333333",
+      "fontSize": "1.5rem",
+      "fontWeight": "bold"
+    }
+  },
+  "subtitle": {
+    "text": "Data: Flipside | Analyst: Charliemarketplace",
+    "style": {
+      "color": "#666666",
+      "fontSize": "1rem"
+    }
+  },
+  "xAxis": {
+    "title": {
+      "text": "Week (Mon - Sun)",
+      "style": {
+        "fontSize": "1rem"
+      }
+    },
+    "reversed": false,
+    "labels": {
+      "align": "right",
+      "style": {
+        "fontSize": "1rem"
+      },
+      "format": "{value:%b %Y}",
+      "rotation": -45
+    }
+  },
+  "yAxis": [
+    {
+      "title": {
+        "text": "Weekly Buy + Sell Volume (USD)",
+        "style": {
+          "fontSize": "1rem",
+          "fontWeight": "bold"
+        }
+      },
+      "max": 20000000000,
+      "min": 0,
+      "labels": {
+        "style": {
+          "fontSize": "1rem"
+        },
+        "format": "${value:,.0f}"
+      },
+      "tickInterval": 1000000000
+    },
+    {
+      "title": {
+        "text": "",
+        "style": {
+          "fontSize": "0.75rem"
+        }
+      },
+      "opposite": true
+    }
+  ],
+  "legend": {
+    "align": "center",
+    "verticalAlign": "top",
+    "reversed": false,
+    "layout": "horizontal",
+    "itemStyle": {
+      "fontSize": "1rem"
+    }
+  },
+  "plotOptions": {
+    "series": {
+      "pointStart": 0,
+      "pointInterval": 1,
+      "relativeXValue": true
+    },
+    "column": {
+      "stacking": "normal",
+      "borderWidth": 0,
+      "groupPadding": 0.1,
+      "pointPadding": 0
+    }
+  },
+  "chart": {
+    "type": "column",
+    "backgroundColor": "#ffffff"
+  },
+  "colors": [
+    "#FFD700",
+    "#808080",
+    "#8A2BE2",
+    "#FFA07A",
+    "#ADD8E6",
+    "#8B0000",
+    "#00008B"
+  ],
+  "tooltip": {
+    "shared": true,
+    "useHTML": true,
+    "pointFormat": "<div style=\"text-align: right;\"><span style=\"color:{series.color}\">{series.name}</span>: <b>${point.y:,.0f}</b></div>",
+    "headerFormat": "<div style=\"text-align: right;\"><b>{point.x:%A, %b %d, %Y}</b></div>"
+  }
+}
