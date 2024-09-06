@@ -1,0 +1,212 @@
+Below is the NEAR blockchain database with example Snowflake SQL code and comments for relevant facts for each table's primary columns (there are metadata columns rarely used not included here). In general, bias towards ez_ tables when relevant. Notice that the same column may have a slightly different definition based on the context. Also notice that ez_ tables tend to have quality of life joins already included (e.g., USD pricing, account names, token symbols, etc.) while fact_ tables contain more raw data. This follows the classic STAR Schema (dims + facts = ez_)
+
+NEAR is a sharded, proof-of-stake blockchain that uses accounts instead of addresses, and employs a unique model with receipts for cross-contract calls. Unlike EVM chains, NEAR uses WebAssembly (WASM) for smart contracts, which allows for contracts written in various languages like Rust and AssemblyScript.
+
+Chain: near
+Schema: core
+ Tables: 
+	dim_address_labels, 
+select 
+blockchain, -- The blockchain network, in this case 'near'
+address, -- The NEAR address associated with the label
+address_name, -- The name attributed to the address
+project_name, -- The associated project name, if applicable
+label_type, -- High-level category describing the address's main function or ownership (e.g., cex, dex, dapp, games)
+label_subtype, -- Sub-category nested within label_type providing further detail (e.g., contract_deployer, hot_wallet, token_contract)
+creator -- The source or entity that created this label, almost always flipside but can be user submitted
+from near.core.dim_address_labels
+limit 5;
+	ez_token_transfers,
+select 
+block_id, -- The height of the chain this block corresponds with
+block_timestamp, -- The date and time at which the block began
+tx_hash, -- Unique identifier (hash) of this transaction
+action_id, -- Unique identifier for the action within the transaction
+contract_address, -- The address of the deployed contract for the token (e.g., 'wrap.near' for wNEAR)
+from_address, -- The address that sends the token (can be 'system' or null for certain operations)
+to_address, -- The receiver of the token
+memo, -- Optional log message within the transaction (can be null)
+amount_raw, -- Unadjusted amount of tokens as it appears on-chain (not decimal adjusted)
+amount_raw_precise, -- Decimal adjusted amount of tokens (high precision float)
+amount_precise, -- Decimal adjusted amount of tokens (as text, for highest precision)
+amount, -- Decimal adjusted amount of tokens (as float, rounded)
+amount_usd, -- USD value of the token transfer
+decimals, -- Number of decimal places for the token
+symbol, -- Token symbol (e.g., 'wNEAR', 'SWEAT')
+token_price, -- Price of the token at the time of transfer
+transfer_type, -- Nature of the transfer (e.g., 'native' for NEAR, 'nep141' for NEAR tokens)
+has_price -- Boolean indicating if the token has a price (inferred from presence of token_price)
+from near.core.ez_token_transfers
+limit 5;
+	fact_actions_events,
+select 
+action_id, -- Unique identifier for each action, concatenation of receipt_id and action index
+tx_hash, -- Unique identifier (hash) of the transaction
+receipt_object_id, -- Unique identifier of the receipt object for this transaction
+predecessor_id, -- Account that was the immediate caller to the smart contract
+receiver_id, -- NEAR account on which the receipt was executed (often a contract)
+signer_id, -- Account that originally signed the transaction
+block_id, -- The height of the chain this block corresponds with
+block_timestamp, -- The date and time at which the block began
+action_index, -- Index of the action within the transaction
+action_name, -- Name of the action performed (e.g., 'FunctionCall', 'Transfer')
+action_data, -- JSON object containing argument data for the action
+logs, -- Array of logs for this receipt
+receipt_succeeded, -- Boolean indicating whether the receipt was successfully processed
+from near.core.fact_actions_events
+limit 5;
+	fact_blocks,
+select 
+block_id, -- The height of the chain this block corresponds with
+block_timestamp, -- The date and time at which the block began
+block_hash, -- Unique identifier (hash) of this block
+tx_count, -- Number of transactions included in the block
+block_author, -- Validator of the blockchain who authored this block
+header:gas_price as gas_price, -- Gas price for transactions in this block
+header:total_supply as total_supply, -- Total supply of NEAR tokens at this block
+header:latest_protocol_version as protocol_version, -- Latest protocol version at this block
+chunks_included, -- Number of chunks included in this block
+epoch_id, -- Identifier for the current epoch
+next_epoch_id, -- Identifier for the next epoch
+last_final_block, -- Hash of the last final block
+validator_reward, -- Reward given to the validator for this block
+chunk_mask, -- Array indicating which chunks are included in this block
+chunks, -- Array of chunk details included in this block
+events -- Array of events that occurred in this block
+from near.core.fact_blocks
+limit 5;
+	fact_logs,
+select 
+block_id, -- The height of the chain this block corresponds with
+block_timestamp, -- The date and time at which the block began
+tx_hash, -- Unique identifier (hash) of this transaction
+receipt_object_id, -- Unique identifier of the receipt object for this transaction
+predecessor_id, -- Account that was the immediate caller to the smart contract
+receiver_id, -- NEAR account on which the receipt was executed (often a contract)
+signer_id, -- Account that originally signed the transaction
+clean_log, -- JSON string containing the logs linked to the transaction
+gas_burnt, -- Amount of gas used in the transaction (raw number format, divide by 10^16 for actual value)
+from near.core.fact_logs
+limit 5;
+	fact_receipts,
+select 
+block_timestamp, -- The date and time at which the block began
+block_id, -- The height of the chain this block corresponds with
+tx_hash, -- Unique identifier (hash) of this transaction
+receipt_object_id, -- Unique identifier of the receipt object for this transaction
+receiver_id, -- NEAR account on which the receipt was executed (often a contract)
+actions:predecessor_id as predecessor_id, -- Account that initiated the action
+actions:receipt:Action:actions[0]:Transfer:deposit as transfer_amount, -- Amount transferred (if applicable)
+actions:receipt:Action:signer_id as signer_id, -- Account that signed the transaction
+gas_burnt, -- Amount of gas used (raw number format, divide by 10^16 for actual value)
+status_value:SuccessValue as success_value, -- Indicates if the transaction was successful
+outcome:outcome:executor_id as executor_id, -- Account that executed the transaction
+outcome:outcome:tokens_burnt as tokens_burnt, -- Amount of tokens burnt during execution
+logs, -- Array of logs generated during execution
+metadata:version as metadata_version -- Version of the metadata
+from near.core.fact_receipts
+limit 5;
+	fact_transactions,
+select 
+tx_hash, -- Unique identifier (hash) of this transaction
+block_id, -- The height of the chain this block corresponds with
+block_hash, -- Unique identifier (hash) of this block
+block_timestamp, -- The date and time at which the block began
+nonce, -- Nonce for transactions
+signature, -- The signature taken from block headers
+tx_receiver, -- The transaction receiver
+tx_signer, -- The transaction signer
+tx:actions as actions, -- Array of actions performed in the transaction
+gas_used / pow(10, 12) as gas_used, -- Units of gas required to execute this transaction (adjusted)
+transaction_fee / pow(10, 24) as transaction_fee_near, -- Total fee paid in NEAR to execute this transaction (adjusted)
+attached_gas / pow(10, 12) as attached_gas, -- Units of gas attached to the transaction (adjusted)
+tx_succeeded, -- Indicates whether the transaction failed or succeeded
+tx:outcome:status:SuccessReceiptId as success_receipt_id, -- Receipt ID for successful transactions
+tx:outcome:status:Failure:ActionError:kind:FunctionCallError:ExecutionError as execution_error -- Error message for failed transactions
+from near.core.fact_transactions
+limit 5;
+
+Schema: defi
+ Tables: 
+	ez_bridge_activity,
+select 
+block_id, -- The height of the chain this block corresponds with
+block_timestamp, -- The date and time at which the block began
+tx_hash, -- Unique identifier (hash) of this transaction
+token_address, -- The contract address of the token being bridged
+symbol, -- The shorthand symbol for the token
+amount, -- The amount of tokens transferred (decimal adjusted)
+amount_usd, -- Token amount in USD, if available
+destination_address, -- The address tokens are being sent to
+source_address, -- The originating address from which tokens are being sent
+platform, -- The protocol utilized for the bridging operation
+bridge_address, -- The address of the bridge contract
+destination_chain, -- The recipient blockchain in the bridge transaction
+source_chain, -- The originating blockchain in the bridge transaction
+method_name, -- Name of the method used for the bridge transaction
+direction, -- Direction of funds through the bridge (inbound/outbound)
+receipt_succeeded -- Boolean indicating if the bridge transaction was successful
+from near.defi.ez_bridge_activity
+where block_timestamp >= current_date - 7 -- Last 7 days of activity
+  and receipt_succeeded = true -- Only successful transactions
+order by amount_usd desc -- Ordered by largest USD amount
+limit 5;
+	ez_dex_swaps,
+SELECT
+    block_timestamp, -- UTC timestamp of the swap
+    tx_hash, -- Unique identifier for the transaction
+    platform, -- DEX platform used (e.g., "v2.ref-finance.near")
+    pool_id, -- Unique identifier for the liquidity pool
+    trader, -- Address of the account initiating the swap
+    swap_index, -- Order of the swap within the transaction
+    token_in_contract, -- Contract address of the token being sold
+    symbol_in, -- Symbol of the token being sold
+    amount_in, -- Amount of tokens being sold (decimal adjusted)
+    amount_in_usd, -- USD value of tokens being sold
+    token_out_contract, -- Contract address of the token being bought
+    symbol_out, -- Symbol of the token being bought
+    amount_out, -- Amount of tokens being bought (decimal adjusted)
+    amount_out_usd, -- USD value of tokens being bought
+    swap_input_data, -- JSON object with swap input parameters
+    log -- Descriptive log of the swap event
+FROM 
+    near.defi.ez_dex_swaps
+LIMIT 5;
+	ez_lending,
+SELECT
+    block_timestamp, -- UTC timestamp of the lending action
+    tx_hash, -- Unique identifier for the transaction
+    platform, -- Lending protocol used (e.g., "burrow")
+    sender_id, -- Wallet address of the user initiating the action
+    actions, -- Type of lending action (deposit, withdraw_succeeded, withdraw_failed, borrow, repay, increase_collateral, decrease_collateral)
+    contract_address, -- Address of the lending protocol's smart contract
+    token_address, -- Contract address of the token involved
+    symbol, -- Symbol of the token involved
+    amount, -- Decimal-adjusted amount of tokens involved in the action
+    amount_usd, -- USD value of the tokens involved
+    price_usd -- USD price of the token at the time of the action
+FROM 
+    near.defi.ez_lending
+LIMIT 5;
+Schema: nft
+ Tables: 
+	ez_nft_sales,
+SELECT
+    block_timestamp, -- UTC timestamp of the NFT sale
+    tx_hash, -- Unique identifier for the transaction
+    seller_address, -- Address of the NFT seller
+    buyer_address, -- Address of the NFT buyer
+    platform_name, -- Name of the NFT marketplace platform
+    nft_address, -- Contract address of the NFT collection
+    token_id, -- Unique identifier of the NFT within its collection
+    price, -- Sale price in NEAR tokens
+    price_usd, -- Sale price converted to USD
+    method_name, -- Name of the contract method called for the sale
+    affiliate_id, -- ID of the affiliate, if any
+    affiliate_amount, -- Amount paid to the affiliate in NEAR
+    royalties, -- JSON object containing royalty payments
+    platform_fee, -- Fee paid to the platform in NEAR
+    gas_burned -- Amount of gas used for the transaction
+FROM 
+    near.nft.ez_nft_sales
+LIMIT 5;

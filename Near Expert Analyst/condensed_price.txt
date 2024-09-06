@@ -1,0 +1,67 @@
+Certainly! Here's a condensed overview of the PRICE schema:
+
+```
+Schema: price
+
+Note: This schema provides token price data and metadata across various blockchains.
+
+Table: dim_asset_metadata
+Purpose: Provides basic metadata for assets across different blockchains and data providers.
+Key Columns:
+- blockchain: The blockchain network where the token exists (e.g., "ethereum", "base")
+- blockchain_id: Unique identifier for the blockchain, used in cross-chain contexts
+- token_address: The contract address of the token on the blockchain
+- provider: The data provider supplying the price information (e.g., "coingecko", "coinmarketcap")
+- asset_id: Identifier used by the provider for this asset
+- symbol: The trading symbol of the token (e.g., "ETH", "USDC")
+- name: The full name of the token (e.g., "Ethereum", "USD Coin")
+
+Table: ez_asset_metadata
+Purpose: Provides consolidated and enriched asset metadata.
+Key Columns:
+- blockchain: The blockchain network where the token exists
+- token_address: The contract address of the token (null for native assets)
+- asset_id: Unique identifier for the asset across providers and blockchains
+- symbol: The trading symbol of the token
+- name: The full name of the token
+- decimals: The number of decimal places used to represent the token's smallest unit
+- is_native: Boolean flag indicating if the asset is the native token of the blockchain
+- is_deprecated: Boolean flag indicating if the token is no longer actively traded or maintained
+
+Table: ez_prices_hourly
+Purpose: Provides hourly price data for assets.
+Key Columns:
+- blockchain: The blockchain network where the token exists
+- hour: The hour for which the closing price was selected
+- token_address: The contract address of the token (null for native assets)
+- symbol: The trading symbol of the token
+- name: The full name of the token
+- decimals: The number of decimal places for the token
+- price: The price of the token in USD terms, adjusted for decimals
+- is_native: Boolean flag for native blockchain assets
+- is_imputed: Boolean flag indicating if the price was carried forward or imputed
+- is_deprecated: Boolean flag for deprecated tokens
+
+Table: fact_prices_ohlc_hourly
+Purpose: Provides detailed hourly price data including open, high, low, and close prices.
+Key Columns:
+- hour: The hour for which this candle data is relevant
+- provider: The data provider supplying the price information
+- asset_id: Identifier used by the provider for this asset
+- open: The opening price for the asset during this hour
+- low: The lowest price for the asset during this hour
+- high: The highest price for the asset during this hour
+- close: The closing price for the asset at the end of this hour
+
+Common Usage Patterns:
+1. Use ez_prices_hourly for most price-related queries, as it provides consolidated and easy-to-use price data.
+2. Join ez_prices_hourly with tables from other schemas on (token_address, hour) to add price information to transaction or event data.
+3. Use ez_asset_metadata to get additional information about tokens, especially when working across multiple blockchains.
+4. When more detailed price information is needed (e.g., intra-hour price movements), use fact_prices_ohlc_hourly.
+5. For provider-specific queries or when needing to distinguish between different price sources, use dim_asset_metadata in conjunction with fact_prices_ohlc_hourly.
+6. When working with native blockchain assets (e.g., ETH on Ethereum), use the is_native flag in ez_prices_hourly and ez_asset_metadata.
+7. Be aware of the is_imputed and is_deprecated flags in ez_prices_hourly when analyzing price data, especially for less liquid or older tokens.
+8. For historical analysis, combine ez_prices_hourly with tables from other schemas to calculate USD values for past transactions or holdings.
+```
+
+This condensed version provides an overview of the key tables in the PRICE schema, highlighting their purposes, key columns, and common usage patterns. It emphasizes the ez_ tables while also noting the usefulness of the fact_ and dim_ tables for specific scenarios.

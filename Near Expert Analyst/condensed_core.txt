@@ -1,0 +1,85 @@
+Schema: core
+
+Standard Columns (present in most tables unless otherwise noted):
+- block_id: Height of the chain this block corresponds with
+- block_timestamp: UTC timestamp of the block, primary index column for time-based queries
+- tx_hash: Unique identifier for each transaction
+
+Table: dim_address_labels
+Purpose: Provides labels and metadata for NEAR addresses.
+Key Columns:
+- address: The NEAR address associated with the label
+- address_name: Name attributed to the address
+- project_name: Associated project name, if applicable
+- label_type: High-level category describing the address's main function
+- label_subtype: Sub-category providing further detail
+
+Table: ez_token_transfers
+Purpose: Tracks token transfer events on the NEAR blockchain.
+Key Columns:
+- contract_address: Address of the deployed token contract
+- from_address: Sender of the token
+- to_address: Receiver of the token
+- amount: Decimal adjusted amount of tokens transferred
+- amount_usd: USD value of the transferred tokens
+- symbol: Token symbol
+- transfer_type: Nature of the transfer (e.g., 'native' for NEAR, 'nep141' for NEAR tokens)
+
+Table: fact_actions_events
+Purpose: Records detailed information about actions and events within transactions.
+Key Columns:
+- action_id: Unique identifier for each action
+- predecessor_id: Account that was the immediate caller to the smart contract
+- receiver_id: NEAR account on which the receipt was executed
+- signer_id: Account that originally signed the transaction
+- action_name: Name of the action performed
+- action_data: JSON object containing argument data for the action
+- receipt_succeeded: Boolean indicating whether the receipt was successfully processed
+
+Table: fact_blocks
+Purpose: Provides detailed information about each block.
+Key Columns:
+- block_hash: Unique identifier of the block
+- tx_count: Number of transactions in the block
+- block_author: Validator who authored the block
+- gas_price: Gas price for transactions in this block
+- total_supply: Total supply of NEAR tokens at this block
+- validator_reward: Reward given to the validator for this block
+
+Table: fact_logs
+Purpose: Records logs associated with transactions.
+Key Columns:
+- receipt_object_id: Unique identifier of the receipt object for the transaction
+- predecessor_id: Account that was the immediate caller to the smart contract
+- receiver_id: NEAR account on which the receipt was executed
+- clean_log: JSON string containing the logs linked to the transaction
+- gas_burnt: Amount of gas used in the transaction
+
+Table: fact_receipts
+Purpose: Tracks receipts generated from transactions.
+Key Columns:
+- receipt_object_id: Unique identifier of the receipt object
+- receiver_id: NEAR account on which the receipt was executed
+- predecessor_id: Account that initiated the action
+- transfer_amount: Amount transferred (if applicable)
+- gas_burnt: Amount of gas used
+- success_value: Indicates if the transaction was successful
+- logs: Array of logs generated during execution
+
+Table: fact_transactions
+Purpose: Provides detailed information about each transaction.
+Key Columns:
+- nonce: Nonce for transactions
+- tx_receiver: The transaction receiver
+- tx_signer: The transaction signer
+- actions: Array of actions performed in the transaction
+- gas_used: Units of gas required to execute this transaction
+- transaction_fee_near: Total fee paid in NEAR to execute this transaction
+- tx_succeeded: Indicates whether the transaction failed or succeeded
+
+Common Usage Patterns:
+1. Use block_timestamp for time-based analysis and filtering.
+2. Join fact_transactions with fact_receipts and fact_logs for comprehensive transaction analysis.
+3. Use ez_token_transfers for token movement analysis, including native NEAR transfers.
+4. Combine dim_address_labels with other tables for richer context on address activities.
+5. Analyze fact_blocks for network health and validator performance metrics.

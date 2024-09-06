@@ -1,0 +1,31 @@
+Schema: nft
+
+Standard Columns (present in all tables unless otherwise noted):
+- block_id: Height of the chain this block corresponds with
+- block_timestamp: UTC timestamp of the block, primary index column for time-based queries
+- tx_hash: Unique identifier for each transaction
+
+Table: ez_nft_sales
+Purpose: Records NFT sale events on NEAR marketplaces.
+Key Columns:
+- seller_address: Address of the NFT seller
+- buyer_address: Address of the NFT buyer
+- platform_name: Name of the NFT marketplace platform
+- nft_address: Contract address of the NFT collection
+- token_id: Unique identifier of the NFT within its collection
+- price: Sale price in NEAR tokens
+- price_usd: Sale price converted to USD
+- method_name: Name of the contract method called for the sale
+- affiliate_id: ID of the affiliate, if any
+- affiliate_amount: Amount paid to the affiliate in NEAR
+- royalties: JSON object containing royalty payments
+- platform_fee: Fee paid to the platform in NEAR
+- gas_burned: Amount of gas used for the transaction
+
+Common Usage Patterns:
+1. Use block_timestamp for time-based analysis and filtering of NFT sales.
+2. Aggregate sales data by platform_name, nft_address, or time periods to identify trends in the NEAR NFT market.
+3. Analyze price and price_usd to track the value of NFT sales over time.
+4. Examine royalties and platform_fee to understand the economics of different NFT marketplaces and collections.
+5. Join with core.dim_address_labels to get more context on buyer and seller addresses.
+6. Use gas_burned to analyze the computational cost of NFT transactions on NEAR.

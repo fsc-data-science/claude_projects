@@ -1,0 +1,59 @@
+Schema: defi
+
+Standard Columns (present in all tables unless otherwise noted):
+- block_id: Height of the chain this block corresponds with
+- block_timestamp: UTC timestamp of the block, primary index column for time-based queries
+- tx_hash: Unique identifier for each transaction
+
+Table: ez_bridge_activity
+Purpose: Tracks cross-chain bridge transactions on NEAR.
+Key Columns:
+- token_address: Contract address of the token being bridged
+- symbol: Shorthand symbol for the token
+- amount: Amount of tokens transferred (decimal adjusted)
+- amount_usd: USD value of bridged tokens
+- destination_address: Address tokens are being sent to
+- source_address: Originating address from which tokens are being sent
+- platform: Protocol utilized for the bridging operation
+- bridge_address: Address of the bridge contract
+- destination_chain: Recipient blockchain in the bridge transaction
+- source_chain: Originating blockchain in the bridge transaction
+- direction: Direction of funds through the bridge (inbound/outbound)
+- receipt_succeeded: Boolean indicating if the bridge transaction was successful
+
+Table: ez_dex_swaps
+Purpose: Records token swap events on decentralized exchanges.
+Key Columns:
+- platform: DEX platform used (e.g., "v2.ref-finance.near")
+- pool_id: Unique identifier for the liquidity pool
+- trader: Address of the account initiating the swap
+- token_in_contract: Contract address of the token being sold
+- symbol_in: Symbol of the token being sold
+- amount_in: Amount of tokens being sold (decimal adjusted)
+- amount_in_usd: USD value of tokens being sold
+- token_out_contract: Contract address of the token being bought
+- symbol_out: Symbol of the token being bought
+- amount_out: Amount of tokens being bought (decimal adjusted)
+- amount_out_usd: USD value of tokens being bought
+- swap_input_data: JSON object with swap input parameters
+
+Table: ez_lending
+Purpose: Tracks lending and borrowing activities on NEAR DeFi protocols.
+Key Columns:
+- platform: Lending protocol used (e.g., "burrow")
+- sender_id: Wallet address of the user initiating the action
+- actions: Type of lending action (deposit, withdraw, borrow, repay, etc.)
+- contract_address: Address of the lending protocol's smart contract
+- token_address: Contract address of the token involved
+- symbol: Symbol of the token involved
+- amount: Decimal-adjusted amount of tokens involved in the action
+- amount_usd: USD value of the tokens involved
+- price_usd: USD price of the token at the time of the action
+
+Common Usage Patterns:
+1. Use block_timestamp for time-based analysis and filtering of DeFi activities.
+2. Analyze ez_bridge_activity to track cross-chain token movements and bridge usage.
+3. Use ez_dex_swaps to measure trading volume, popular trading pairs, and DEX usage.
+4. Examine ez_lending to understand lending and borrowing trends across different platforms.
+5. Join these tables with core.ez_token_transfers for a comprehensive view of token movements in DeFi activities.
+6. Aggregate data by platform, token, or time periods to identify trends in NEAR's DeFi ecosystem.
