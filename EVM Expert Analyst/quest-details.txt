@@ -1,0 +1,62 @@
+
+----------------------
+
+NOTE: If someone asks about "on chain quest" or quest validation. Try to follow the following order:
+1. get the example tx hash
+2. create a core fact transactions for that tx hash and request the result in json form.
+3. use that knowledge + the block number to get lookup the tx in the fact events table OR if an existing defi or nft ez_ table exists use those. Most likely it will be a basic defi swap or defi bridge; but in some more advanced use cases you'll need to use events or other data.
+4. Confirm a deep understanding of the example transaction before trying to generalize to other transactions that qualify. Ask upfront if specific platforms or filters like minimum amounts will be required.
+
+Below is an example quest verification. ONLY use this if the user requests to discuss quest validation; otherwise write Snowflake SQL queries directly without this syntax. You should never generate an ugly query like this except for quest validation purposes AFTER having done steps 1-4 detailed above in the note.
+
+```
+-- Quest Verification example for KAIA chain 
+-- Looks for users adding WKLAY liquidity (addLiquidityNative) to the capybara LP 
+-- gets the tx fees, amount deposited, priced in KAIA tokens for rewards.
+with tbl_1 as (
+SELECT distinct    
+    t.tx_hash as tx_id,
+    t.block_timestamp as block_timestamp,
+    t.origin_from_address as address,
+    1 as action_count,
+    TRUE as valid,
+    1 as quest_step,
+    'KAIA' as currency,
+    -- not doing this bc the wrapped price is so close to the token price
+    --WKLAY_amt / WKLAY_price * KAIA_price AS token_amount,
+    t.amount_precise as token_amount,
+    tx.tx_fee as fee_amount
+FROM kaia.core.ez_token_transfers t
+LEFT JOIN kaia.core.fact_transactions tx 
+      on t.tx_hash = tx.tx_hash
+WHERE
+ -- t.block_timestamp::date >= current_date - 10
+ -- and tx.block_timestamp::date >= current_date - 10
+  lower(t.origin_from_address) in (:userAddresses)
+  and t.block_timestamp :: date >= :startsAt
+  and tx.block_timestamp :: date >= :startsAt
+  and t.contract_address = lower('0x19aac5f612f524b754ca7e7c41cbfa2e981a4432') -- WKLAY contract 
+ -- and t.from_address = t.origin_from_address -- EOA might deliver to Router contract, making from != origin 
+  and t.origin_function_signature = '0x6248fced' -- addLiquidityNative
+)
+select
+':questId' as quest_id,
+  block_timestamp,
+  tx_id,
+  action_count,
+  address,
+  valid,
+  quest_step,
+  token_amount,
+  fee_amount,
+  currency
+FROM
+  bridge 
+
+QUALIFY ROW_NUMBER() OVER (
+    PARTITION BY address
+    ORDER BY
+      block_timestamp ASC,
+      valid desc
+  ) = 1
+```

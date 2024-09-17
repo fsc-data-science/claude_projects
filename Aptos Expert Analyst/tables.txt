@@ -1,0 +1,232 @@
+Schema: core
+ Tables: 
+	dim_aptos_names,
+select 
+token_name, -- The full Aptos name (including domain, subdomain, and suffix)
+domain, -- The domain of the Aptos name (without suffix)
+domain_with_suffix, -- The domain plus the .apt suffix
+subdomain, -- The subdomain of the Aptos name (if any)
+owner_address, -- The account address that currently owns the Aptos name
+registered_address, -- The account address that the Aptos name is registered to
+is_active, -- Boolean value identifying if the Aptos name is active
+is_primary, -- Boolean value identifying if the Aptos name is primary for the owner
+token_standard, -- The token standard of the Aptos name (e.g., "v2")
+expiration_timestamp, -- The timestamp of when the Aptos name expires
+last_transaction_version -- The last transaction version involving this Aptos name
+from aptos.core.dim_aptos_names
+limit 5;
+	dim_tokens,
+select 
+token_address, -- The full address of the token, containing the account, module, and resource
+name, -- The full token name
+symbol, -- The token symbol
+decimals, -- The number of decimal places for the token
+coin_type_hash, -- Hash of the coin type
+creator_address, -- The account address that created the token
+transaction_created_timestamp, -- The timestamp when the token was created
+transaction_version_created -- The transaction version when the token was created
+from aptos.core.dim_tokens
+limit 5;
+
+	ez_native_transfers,
+select 
+block_number, -- Also known as block height. Increases after the addition of each new block.
+block_timestamp, -- The date and time at which the block was produced.
+tx_hash, -- Unique 66-character identifier generated when a transaction is executed.
+version, -- The height of the transaction on the Aptos blockchain. Starts at 0 and increments by 1 for each transaction.
+success, -- Boolean value indicating whether the transaction was successful or not.
+from_address, -- The account address that sent the transfer.
+to_address, -- The account address that received the transfer.
+amount, -- The non-decimal adjusted amount of tokens transferred.
+token_address -- The full address of the token, containing the account, module, and resource.
+from aptos.core.ez_native_transfers
+limit 5;
+	fact_blocks,
+select 
+block_number, -- Also known as block height. Increases after the addition of each new block.
+block_timestamp, -- The date and time at which the block was produced.
+block_hash, -- The hash of the block header for a given block.
+first_version, -- The version number of the first transaction in the block.
+last_version, -- The version number of the last transaction in the block.
+tx_count -- The count of transactions in this block.
+from aptos.core.fact_blocks
+limit 2;
+	fact_transactions,
+select 
+block_number, -- Also known as block height. Increases after the addition of each new block.
+block_timestamp, -- The date and time at which the block was produced.
+version, -- The height of the transaction on the Aptos blockchain. Starts at 0 and increments by 1 for each transaction.
+tx_hash, -- Unique 66-character identifier generated when a transaction is executed.
+success, -- Boolean value indicating whether the transaction was successful or not.
+tx_type, -- The type of the transaction (e.g., "block_metadata_transaction", "state_checkpoint_transaction", "user_transaction").
+sender, -- Address of the originator account for a transaction. Must sign the transaction.
+signature, -- Result of hashing the signing message with the client's private key (Ed25519 scheme by default).
+payload, -- The data being carried by the transaction.
+payload_function, -- The function being called in the transaction payload.
+changes, -- The changes that the transaction executed.
+events, -- The events that the transaction executed.
+gas_unit_price, -- The cost per unit of gas, determining the transaction fee.
+gas_used, -- The amount of gas used for the transaction.
+max_gas_amount, -- The maximum amount of gas allocated for the transaction execution.
+expiration_timestamp_secs, -- The time at which the transaction ceases to be valid.
+vm_status, -- Provides context for failed transactions or "Executed successfully" for successful ones.
+state_change_hash, -- Hash representing the state change.
+accumulator_root_hash, -- The root hash of a Merkle accumulator.
+event_root_hash -- The root hash for the event.
+from aptos.core.fact_transactions
+limit 2;
+	fact_events,
+select 
+block_number, -- Also known as block height. Increases after the addition of each new block.
+block_timestamp, -- The date and time at which the block was produced.
+version, -- The height of the transaction on the Aptos blockchain. Starts at 0 and increments by 1 for each transaction.
+tx_hash, -- Unique 66-character identifier generated when a transaction is executed.
+success, -- Boolean value indicating whether the transaction was successful or not.
+tx_type, -- The type of the transaction (e.g., "block_metadata_transaction", "state_checkpoint_transaction", "user_transaction").
+payload_function, -- The function being called in the transaction payload.
+event_index, -- Unique identifier for the event, useful for determining the order of changes.
+event_type, -- The full three-part descriptive type of the event (event_address::event_module::event_resource).
+event_address, -- The first segment of the event type.
+event_module, -- The second segment of the event type.
+event_resource, -- The third segment of the event type.
+event_data, -- The "data" object within this event.
+account_address, -- The top-level address for this event.
+creation_number, -- Creation number corresponding to the event stream originating from the given account.
+sequence_number -- The number of transactions submitted and committed on chain from the account.
+from aptos.core.fact_events
+limit 2;
+	fact_changes,
+select 
+block_number, -- Also known as block height. Increases after the addition of each new block.
+block_timestamp, -- The date and time at which the block was produced.
+version, -- The height of the transaction on the Aptos blockchain. Starts at 0 and increments by 1 for each transaction.
+tx_hash, -- Unique 66-character identifier generated when a transaction is executed.
+success, -- Boolean value indicating whether the transaction was successful or not.
+tx_type, -- The type of the transaction (e.g., "block_metadata_transaction", "state_checkpoint_transaction", "user_transaction").
+payload_function, -- The function being called in the transaction payload.
+change_index, -- Unique identifier for the change, useful for determining the order of changes.
+change_data, -- The "data" object within this change.
+change_type, -- The type of change (e.g., delete_resource, delete_table_item, write_module, write_resource, write_table_item).
+address, -- The top level address for this change.
+handle, -- The top level handle for this change.
+inner_change_type, -- The full three-part descriptive change type (change_address::change_module::change_resource).
+change_address, -- The first segment of the inner change type.
+change_module, -- The second segment of the inner change type.
+change_resource, -- The third segment of the inner change type.
+key, -- The key value for the write_table_item change.
+value, -- The value for the write_table_item change.
+state_key_hash -- Hash of the state key.
+from aptos.core.fact_changes
+limit 2;
+	fact_transfers,
+select 
+block_number, -- Also known as block height. Increases after the addition of each new block.
+block_timestamp, -- The date and time at which the block was produced.
+tx_hash, -- Unique 66-character identifier generated when a transaction is executed.
+version, -- The height of the transaction on the Aptos blockchain. Starts at 0 and increments by 1 for each transaction.
+success, -- Boolean value indicating whether the transaction was successful or not.
+event_index, -- Unique identifier for the event, useful for determining the order of events.
+creation_number, -- Creation number corresponding to the event stream originating from the given account.
+transfer_event, -- The type of transfer event ('WithdrawEvent' or 'DepositEvent').
+account_address, -- The top level address for this event.
+amount, -- The non-decimal adjusted amount of tokens transferred.
+token_address -- The full address of the token, containing the account, module, and resource.
+from aptos.core.fact_transfers
+where amount != 0 -- Filter out transfers with zero amount
+limit 2;
+Schema: defi
+ Tables: 
+	ez_dex_swaps,
+select 
+block_number, -- Also known as block height. Increases after the addition of each new block.
+block_timestamp, -- The date and time at which the block was produced.
+version, -- The height of the transaction on the Aptos blockchain. Starts at 0 and increments by 1 for each transaction.
+tx_hash, -- Unique 66-character identifier generated when a transaction is executed.
+event_index, -- Unique identifier for the event, useful for determining the order of events.
+platform, -- The name of the platform where the swap occurred.
+event_address, -- Address of the contract where the swap event occurred.
+swapper, -- Address that initiated the swap.
+token_in, -- The full address of the inbound token (account, module, and resource).
+symbol_in, -- Symbol of the inbound token.
+token_out, -- The full address of the outbound token (account, module, and resource).
+symbol_out, -- Symbol of the outbound token.
+amount_in_unadj, -- The non-decimal adjusted amount of the inbound token for the swap.
+amount_in, -- The decimal-adjusted amount of the inbound token.
+amount_in_usd, -- The USD value of the inbound token amount.
+amount_out_unadj, -- The non-decimal adjusted amount of the outbound token for the swap.
+amount_out, -- The decimal-adjusted amount of the outbound token.
+amount_out_usd -- The USD value of the outbound token amount.
+from aptos.defi.ez_dex_swaps
+limit 5;
+	fact_bridge_activity,
+select 
+block_number, -- Also known as block height. Increases after the addition of each new block.
+block_timestamp, -- The date and time at which the block was produced.
+version, -- The height of the transaction on the Aptos blockchain. Starts at 0 and increments by 1 for each transaction.
+tx_hash, -- Unique 66-character identifier generated when a transaction is executed.
+platform, -- The platform or protocol from which the bridge transaction or event originates.
+bridge_address, -- The address of the contract handling the bridge deposit or transfer.
+event_name, -- The third segment of the event type.
+direction, -- The direction of the bridge activity (e.g., "inbound" or "outbound").
+tx_sender, -- The address of the originator account for the transaction.
+sender, -- The address that initiated the bridge deposit or transfer.
+receiver, -- The designated address to receive the bridged tokens on the target chain.
+source_chain_id, -- The numeric identifier of the source blockchain network.
+source_chain_name, -- The name of the source blockchain network.
+destination_chain_id, -- The numeric identifier of the destination blockchain network.
+destination_chain_name, -- The name of the destination blockchain network.
+token_address, -- The address of the token being bridged.
+amount_unadj -- The non-decimal adjusted amount of the token being bridged.
+from aptos.defi.fact_bridge_activity
+limit 5;
+Schema: nft
+ Tables: 
+	ez_nft_mints,
+select 
+block_timestamp, -- The block timestamp at which the NFT event occurred.
+block_number, -- The block number at which the NFT event occurred.
+version, -- The version number of the transaction.
+tx_hash, -- The transaction hash for the NFT event.
+event_index, -- The event number within a transaction.
+event_type, -- The type of NFT event (e.g., MintTokenEvent, MintEvent).
+nft_from_address, -- The sending address of the NFT in the transaction.
+nft_to_address, -- The receiving address of the NFT in the transaction.
+nft_address, -- The contract address of the NFT.
+token_version, -- The version of the NFT token (e.g., v1, v2).
+project_name, -- The name of the NFT project.
+tokenid, -- The token ID for this NFT contract.
+nft_count, -- The number of NFTs minted in this event.
+total_price, -- The amount of the NFT event in the currency in which the transaction occurred.
+total_price_usd, -- The amount of the NFT event in US dollars.
+currency_address -- The token contract address for this NFT event.
+from aptos.nft.ez_nft_mints
+limit 5;
+	ez_nft_sales,
+select 
+block_timestamp, -- The block timestamp at which the NFT event occurred.
+block_number, -- The block number at which the NFT event occurred.
+version, -- The version number of the transaction.
+tx_hash, -- The transaction hash for the NFT event.
+event_index, -- The event number within a transaction.
+event_type, -- The type of NFT event (e.g., sale, bid_won, redeem).
+buyer_address, -- The address of the buyer of the NFT in the transaction.
+seller_address, -- The address of the seller of the NFT in the transaction.
+nft_address, -- The contract address of the NFT.
+token_version, -- The version of the NFT token.
+platform_address, -- The address of the exchange used for the transaction.
+project_name, -- The name of the NFT project.
+tokenid, -- The token ID for this NFT contract.
+platform_name, -- The name of the exchange used for the trade.
+platform_exchange_version, -- The version of the exchange contract used for the transaction.
+total_price, -- The amount of the NFT event in the currency in which the transaction occurred.
+total_price_usd, -- The amount of the NFT event in US dollars.
+platform_fee, -- The amount of fees paid to the platform for this NFT event in the transaction's currency.
+platform_fee_usd, -- The amount of fees paid to the platform for this NFT event in US dollars.
+creator_fee, -- The amount of fees paid to the NFT collection as royalty payments in the transaction's currency.
+creator_fee_usd, -- The amount of fees paid to the NFT collection as royalty payments in US dollars.
+total_fees, -- The total amount of fees paid relating to the NFT purchase in the transaction currency.
+total_fees_usd, -- The total amount of fees paid relating to the NFT purchase in US dollars.
+aggregator_name, -- The name of the aggregator platform where the sale took place (null if not applicable).
+currency_address -- The token contract address for this NFT event.
+from aptos.nft.ez_nft_sales
+limit 5;

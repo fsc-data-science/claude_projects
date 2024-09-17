@@ -1,0 +1,36 @@
+Schema: defi
+
+Standard Columns (present in all tables unless otherwise noted):
+- block_number: Height of the chain, increases with each new block
+- block_timestamp: UTC timestamp of the block, primary index for time-based queries
+- version: Unique identifier for each transaction, increments by 1 (Aptos-specific)
+- tx_hash: Unique identifier for each transaction
+
+Note: APT (native token) has 8 decimal places (1e8). Non-decimal adjusted amounts should be divided by 1e8 for the actual value. Or, more ideally, use the already adjusted columns if available.
+
+Table: ez_dex_swaps
+Purpose: Records token swap events on decentralized exchanges.
+Key Columns:
+- event_index: Order of the event within the transaction
+- platform: Name of the DEX platform
+- event_address: Address of the contract where the swap event occurred
+- swapper: Address that initiated the swap
+- token_in, token_out: Full addresses of the swapped tokens (account::module::resource)
+- symbol_in, symbol_out: Symbols of the swapped tokens
+- amount_in_unadj, amount_out_unadj: Non-decimal adjusted swap amounts
+- amount_in, amount_out: Decimal-adjusted swap amounts
+- amount_in_usd, amount_out_usd: USD values of swapped amounts
+
+Table: fact_bridge_activity
+Purpose: Tracks cross-chain bridge transactions on Aptos.
+Key Columns:
+- platform: Name of the bridging platform
+- bridge_address: Address of the bridge contract
+- event_name: Name of the bridge event
+- direction: "inbound" or "outbound"
+- tx_sender: Address initiating the transaction
+- sender, receiver: Addresses involved in the bridge transfer
+- source_chain_id, destination_chain_id: Numeric identifiers of the chains involved
+- source_chain_name, destination_chain_name: Names of the chains involved
+- token_address: Address of the token being bridged
+- amount_unadj: Non-decimal adjusted amount of tokens bridged

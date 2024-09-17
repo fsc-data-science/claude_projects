@@ -1,0 +1,55 @@
+Schema: nft
+
+Standard Columns (present in all tables unless otherwise noted):
+- block_number: Height of the chain, increases with each new block
+- block_timestamp: UTC timestamp of the block, primary index for time-based queries
+- version: Unique identifier for each transaction, increments by 1 (Aptos-specific)
+- tx_hash: Unique identifier for each transaction
+
+Note: All price and fee amounts in this schema are already decimal-adjusted.
+
+Table: ez_nft_mints
+Purpose: Records NFT minting events on Aptos.
+Key Columns:
+- event_index: Order of the event within the transaction
+- event_type: Type of NFT event (e.g., MintTokenEvent, MintEvent)
+- nft_from_address: Address initiating the mint (usually 0x0 for new mints)
+- nft_to_address: Address receiving the minted NFT
+- nft_address: Full address of the NFT contract (account::module::resource)
+- token_version: Version of the NFT token standard (e.g., v1, v2)
+- project_name: Name of the NFT project
+- tokenid: Unique identifier for the NFT within its contract
+- nft_count: Number of NFTs minted in this event
+- total_price: Mint price in the transaction currency (decimal-adjusted)
+- total_price_usd: USD value of the mint price
+- currency_address: Address of the currency used for minting
+
+Table: ez_nft_sales
+Purpose: Tracks NFT sale events on Aptos marketplaces.
+Key Columns:
+- event_index: Order of the event within the transaction
+- event_type: Type of NFT event (e.g., sale, bid_won, redeem)
+- buyer_address, seller_address: Addresses involved in the sale
+- nft_address: Full address of the NFT contract (account::module::resource)
+- token_version: Version of the NFT token standard
+- platform_address: Address of the marketplace contract
+- project_name: Name of the NFT project
+- tokenid: Unique identifier for the NFT within its contract
+- platform_name: Name of the NFT marketplace
+- platform_exchange_version: Version of the marketplace contract
+- total_price: Sale price in the transaction currency (decimal-adjusted)
+- total_price_usd: USD value of the sale price
+- platform_fee, creator_fee: Fees in transaction currency (decimal-adjusted)
+- platform_fee_usd, creator_fee_usd: USD values of the fees
+- total_fees, total_fees_usd: Total fees in transaction currency and USD
+- aggregator_name: Name of the aggregator platform (if applicable)
+- currency_address: Address of the currency used for the sale
+
+Common Usage Patterns:
+1. Use version for precise transaction ordering and joins across tables.
+2. Join with core.dim_tokens to get additional information about the currencies used in mints and sales.
+3. Analyze project_name and nft_address to track popularity and sales volumes of different NFT collections.
+4. Use platform_name in ez_nft_sales to compare activity across different NFT marketplaces.
+5. Combine with core.fact_events to get more detailed information about the NFT transactions.
+6. Use token_version to distinguish between different NFT standards on Aptos.
+7. Prices and fees are already decimal-adjusted, so they can be used directly for calculations and analysis.

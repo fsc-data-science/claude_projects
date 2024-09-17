@@ -1,0 +1,119 @@
+Schema: defi
+
+Standard Columns (present in all tables unless otherwise noted):
+- block_number: Unique identifier for each block, 1-to-1 with block_timestamp
+- block_timestamp: UTC timestamp of the block, primary index column for time-based queries
+- tx_hash: Unique identifier for each transaction, useful for transaction-specific analysis
+- event_index: Order of events within a block, can be used to order events within a transaction
+- origin_function_signature: Hexcode of the initial function called in the transaction
+- origin_from_address: Externally Owned Account (EOA) that initiated the transaction
+- origin_to_address: Initial contract address called in the transaction
+
+Note: All ez_ tables are pre-joined with relevant dim_ tables and include USD values using hourly closing prices.
+
+Table: dim_dex_liquidity_pools
+Purpose: Defines decentralized exchange liquidity pools.
+Key Columns:
+- creation_block, creation_time, creation_tx: Pool creation details
+- platform: DEX name (e.g., 'uniswap-v2')
+- pool_address: Unique liquidity pool contract address
+- pool_name: Human-readable pool name
+- tokens: JSON object with token addresses (e.g., tokens:token0, tokens:token1, etc.)
+- symbols: JSON object with token symbols (e.g., symbols:token0, symbols:token1, etc.)
+- decimals: JSON object with token decimal places (e.g., decimals:token0, decimals:token1, etc.)
+Note: Can contain multiple tokens in arrays for multi-token pools.
+
+Table: ez_bridge_activity
+Purpose: Tracks outbound bridging activity from the current chain.
+Key Columns:
+- bridge_address: Address of the bridge contract used
+- platform: Name of the bridging platform
+- sender, receiver: Addresses initiating and receiving the bridge transfer
+- destination_chain, destination_chain_id: Target blockchain info
+- token_address, token_symbol: Bridged token details
+- amount: Bridged amount (adjusted for token decimals)
+- amount_usd: USD value using hourly closing price of the token
+Note: For inbound bridging, refer to the crosschain schema.
+
+Table: ez_dex_swaps
+Purpose: Records token swaps on decentralized exchanges.
+Key Columns:
+- platform: DEX name
+- contract_address: Liquidity pool address where the swap occurs
+- pool_name: Human-readable pool name
+- token_in, token_out: Addresses of swapped tokens
+- symbol_in, symbol_out: Symbols of swapped tokens
+- amount_in, amount_out: Swap amounts (adjusted for decimals)
+- amount_in_usd, amount_out_usd: USD values using hourly closing prices
+
+Table: ez_lending_borrows
+Purpose: Tracks borrowing events on lending platforms.
+Key Columns:
+- platform: Lending platform name
+- protocol_market: Address of the specific lending market
+- borrower: Address borrowing tokens
+- token_address, token_symbol: Borrowed token details
+- amount: Borrowed amount (adjusted for token decimals)
+- amount_usd: USD value using hourly closing price of the token
+
+Table: ez_lending_deposits
+Purpose: Records deposit events on lending platforms.
+Key Columns:
+- platform: Lending platform name
+- protocol_market: Address of the specific lending market
+- depositor: Address depositing tokens
+- token_address, token_symbol: Deposited token details
+- amount: Deposited amount (adjusted for token decimals)
+- amount_usd: USD value using hourly closing price of the token
+
+Table: ez_lending_flashloans
+Purpose: Captures flashloan events on lending platforms.
+Key Columns:
+- platform: Lending platform name (e.g., "Aave V3")
+- initiator: Address initiating the flashloan
+- target: Contract receiving the flashloan
+- protocol_market: Specific market address
+- flashloan_token, flashloan_token_symbol: Borrowed token details
+- flashloan_amount: Borrowed amount (adjusted for token decimals)
+- flashloan_amount_usd: USD value using hourly closing price of the token
+- premium_amount: Flashloan fee (adjusted for token decimals)
+- premium_amount_usd: USD value of fee using hourly closing price
+
+Table: ez_lending_liquidations
+Purpose: Tracks liquidation events on lending platforms.
+Key Columns:
+- platform: Lending platform name
+- liquidator: Address performing the liquidation
+- borrower: Address being liquidated
+- protocol_market: Specific market address
+- collateral_token, collateral_token_symbol: Liquidated collateral details
+- amount: Liquidated amount (adjusted for token decimals)
+- amount_usd: USD value using hourly closing price of the token
+- debt_token, debt_token_symbol: Repaid debt token details
+
+Table: ez_lending_repayments
+Purpose: Records loan repayment events on lending platforms.
+Key Columns:
+- platform: Lending platform name
+- payer: Address making the repayment
+- borrower: Address whose loan is being repaid
+- protocol_market: Specific market address
+- token_address, token_symbol: Repaid token details
+- amount: Repaid amount (adjusted for token decimals)
+- amount_usd: USD value using hourly closing price of the token
+
+Table: ez_lending_withdraws
+Purpose: Tracks withdrawal events from lending platforms.
+Key Columns:
+- platform: Lending platform name
+- depositor: Address withdrawing tokens
+- protocol_market: Specific market address
+- token_address, token_symbol: Withdrawn token details
+- amount: Withdrawn amount (adjusted for token decimals)
+- amount_usd: USD value using hourly closing price of the token
+
+Common Usage Patterns:
+1. Use block_timestamp for time-based analysis and filtering.
+2. Aggregate amounts by platform, token, or user address for volume analysis.
+3. Join lending tables on (platform, protocol_market) for comprehensive lending analysis.
+4. For custom time ranges or non-ez_ tables, join with price.ez_prices_hourly on (token_address, block_timestamp) for USD conversions.

@@ -1,0 +1,139 @@
+Certainly! I'll provide a condensed overview of the CORE schema, emphasizing the ez_ tables and noting the differences with their fact counterparts where applicable. Here's the condensed version for the CORE schema:
+
+```
+Schema: core
+
+Standard Columns (present in most tables unless otherwise noted):
+- block_number: Unique identifier for each block, 1-to-1 with block_timestamp
+- block_timestamp: UTC timestamp of the block, primary index column for time-based queries
+- tx_hash: Unique identifier for each transaction, useful for transaction-specific analysis
+- event_index: Order of events within a block, can be used to order events within a transaction
+- origin_function_signature: Hexcode of the initial function called in the transaction
+- origin_from_address: Externally Owned Account (EOA) that initiated the transaction
+- origin_to_address: Initial contract address called in the transaction
+
+Note: ez_ tables are pre-joined with relevant dim_ tables and often include additional context.
+
+Table: dim_contracts
+Purpose: Provides information about deployed contracts.
+Key Columns:
+- address: The contract address
+- symbol: Token symbol, if contract is a token (e.g., ERC20), can be null
+- name: Contract name (if available), can be null
+- decimals: Token decimals if it is a token, can be null
+- created_block_number, created_block_timestamp, created_tx_hash: Contract creation details
+- creator_address: EOA that deployed the contract
+
+Table: dim_contract_abis
+Purpose: Stores ABIs (Application Binary Interfaces) for contracts.
+Key Columns:
+- contract_address: The contract address
+- abi: The ABI that allows for decoding the contract
+- abi_source: Source of the ABI (e.g., etherscan, bytecode_matched)
+- bytecode: The core contract code
+
+Table: dim_labels
+Purpose: Provides labels for addresses (contracts and EOAs).
+Key Columns:
+- blockchain: Chain where contract address is labeled
+- creator: Entity that created the label
+- address: Contract or EOA address being labeled
+- address_name: Name of contract if available
+- label_type: Category (e.g., dapp, defi, cex, token)
+- label_subtype: Subcategory within label_type
+- project_name: Name of project owning the address, if known
+
+Table: ez_decoded_event_logs
+Purpose: Provides decoded event logs for contract interactions.
+Key Columns:
+- contract_address: The contract emitting the event log
+- contract_name: Name of the contract (if available)
+- event_name: Name of the emitted event
+- decoded_log: Parsed event data
+- full_decoded_log: Detailed event data (use sparingly)
+Note: Preferred over fact_decoded_event_logs due to additional context.
+
+Table: ez_native_transfers
+Purpose: Tracks transfers of the chain's native asset (e.g., ETH).
+Key Columns:
+- from_address: Address sending the native asset
+- to_address: Address receiving the native asset
+- amount: Decimal-adjusted and rounded amount transferred
+- amount_precise_raw: Non-decimal adjusted amount
+- amount_precise: Decimal-adjusted, not rounded amount
+- amount_usd: USD value using hourly closing price
+Additional Columns:
+- tx_position: Index of transaction within the block
+- trace_index: Index of native transfer within the trace
+- identifier: Identifies where in the stack the trace_index occurs
+
+Table: ez_token_transfers
+Purpose: Tracks transfers of tokens (e.g., ERC20).
+Key Columns:
+- contract_address: Token contract address
+- from_address: Address sending the tokens
+- to_address: Address receiving the tokens
+- amount: Decimal-adjusted and rounded amount transferred
+- amount_usd: USD value using hourly closing price
+- symbol: Token symbol
+Additional Columns:
+- raw_amount_precise: Non-decimal adjusted, not rounded amount
+- raw_amount: Non-decimal adjusted, rounded amount
+- amount_precise: Decimal-adjusted, not rounded amount
+- token_price: Hourly closing price of the token
+- has_price: Binary flag indicating if a price is available
+
+Table: fact_blocks
+Purpose: Provides detailed information about each block.
+Key Columns:
+- network: Blockchain network (usually "mainnet")
+- tx_count: Number of transactions in the block
+- gas_limit, gas_used: Block gas details
+- hash, parent_hash: Block hashes
+- size: Total bytes of data in block
+Additional Columns (not in ez_ tables):
+- difficulty, total_difficulty: Proof of work details (0 on PoS chains)
+- extra_data: Arbitrary data included by block proposer
+- uncle_blocks: Competing blocks that were dropped
+
+Table: fact_traces
+Purpose: Provides detailed execution traces for transactions.
+Key Columns:
+- from_address: Address initiating the trace
+- to_address: Address receiving the trace call
+- value: Amount of native currency sent with the trace
+- gas, gas_used: Gas details for the trace
+- input: Input data for the trace
+- output: Output data from the trace
+- type: Type of trace (e.g., 'CALL', 'DELEGATECALL')
+- tx_status: Status of the overall transaction
+- trace_status: Status of this specific trace
+Additional Columns (not in ez_ tables):
+- identifier: Unique identifier for the trace within the transaction
+- sub_traces: Number of sub-traces spawned by this trace
+- error_reason: Reason for error if the trace failed
+
+Table: fact_transactions
+Purpose: Provides detailed information about each transaction.
+Key Columns:
+- nonce: Number of transactions sent from this address
+- from_address: Address initiating the transaction
+- to_address: Address receiving the transaction
+- value: Amount of native currency sent
+- gas_price, effective_gas_price: Gas price details
+- gas_limit, gas_used: Gas usage details
+- status: Transaction status (e.g., 'SUCCESS' or 'FAIL')
+Additional Columns (not in ez_ tables):
+- input_data: Input data for the transaction
+- r, s, v: Components of the transaction signature
+
+Common Usage Patterns:
+1. Use ez_ tables for most queries due to pre-joined data and additional context.
+2. Join dim_contracts and dim_labels with other tables for richer contract information.
+3. Use fact_ tables when needing low-level details not available in ez_ tables.
+4. Combine ez_native_transfers and ez_token_transfers for comprehensive transfer analysis.
+5. Use fact_traces for detailed transaction execution analysis.
+6. Join with price.ez_prices_hourly for custom USD conversions on fact_ tables.
+```
+
+This condensed version provides an overview of the key tables in the CORE schema, emphasizing the ez_ tables while noting important information available in the fact_ tables. It highlights the differences and use cases for each table type.

@@ -1,0 +1,82 @@
+Schema: core
+
+Standard Columns (present in most tables unless otherwise noted):
+- block_number: Height of the chain, increases with each new block
+- block_timestamp: UTC timestamp of the block, primary index for time-based queries
+- version: Unique identifier for each transaction, increments by 1 (Aptos-specific)
+- tx_hash: Unique identifier for each transaction
+
+Note: APT (native token) has 8 decimal places (1e8). Non-decimal adjusted amounts should be divided by 1e8 for the actual value.
+
+Table: dim_aptos_names
+Purpose: Stores information about Aptos names (similar to ENS for Ethereum).
+Key Columns:
+- token_name: Full Aptos name (including domain, subdomain, and suffix)
+- owner_address: Current owner of the Aptos name
+- is_active: Indicates if the name is active
+- is_primary: Indicates if it's the primary name for the owner
+- expiration_timestamp: When the name expires
+
+Table: dim_tokens
+Purpose: Provides information about tokens on Aptos.
+Key Columns:
+- token_address: Full address of the token (account::module::resource)
+- name, symbol, decimals: Token details
+- creator_address: Address that created the token
+- transaction_created_timestamp: When the token was created
+
+Table: ez_native_transfers
+Purpose: Tracks transfers of the native APT token.
+Key Columns:
+- from_address: Sender of the transfer
+- to_address: Receiver of the transfer
+- amount: Amount of APT transferred (non-decimal adjusted, divide by 1e8 for actual value)
+- success: Indicates if the transfer was successful
+
+Table: fact_blocks
+Purpose: Provides detailed information about each block.
+Key Columns:
+- block_hash: Unique identifier for the block
+- first_version, last_version: Version range for transactions in the block
+- tx_count: Number of transactions in the block
+
+Table: fact_transactions
+Purpose: Records detailed information about each transaction.
+Key Columns:
+- tx_type: Type of transaction (e.g., "user_transaction", "block_metadata_transaction"). You may want to filter to user_transaction for most queries.
+- sender: Address initiating the transaction
+- payload_function: Function called in the transaction
+- gas_unit_price, gas_used, max_gas_amount: Gas-related information (non-decimal adjusted)
+- vm_status: Execution status of the transaction
+
+Table: fact_events
+Purpose: Stores events emitted during transaction execution.
+Key Columns:
+- event_type: Full type of the event (address::module::resource)
+- event_data: Data associated with the event
+- account_address: Address where the event occurred
+- creation_number, sequence_number: Identifiers for the event stream
+
+Table: fact_changes
+Purpose: Tracks state changes resulting from transactions.
+Key Columns:
+- change_type: Type of state change (e.g., "write_resource", "write_module")
+- address: Address where the change occurred
+- change_data: Data associated with the change
+- state_key_hash: Hash of the state key
+
+Table: fact_transfers
+Purpose: Records token transfer events.
+Key Columns:
+- transfer_event: Type of transfer ('WithdrawEvent' or 'DepositEvent')
+- account_address: Address associated with the transfer
+- amount: Amount transferred (non-decimal adjusted, divide by token's decimals for actual value)
+- token_address: Address of the transferred token
+
+Common Usage Patterns:
+1. Use version for precise transaction ordering and joins across tables.
+2. Join fact_transactions with fact_events and fact_changes for comprehensive transaction analysis.
+3. Use dim_aptos_names for resolving human-readable names to addresses.
+4. Combine ez_native_transfers with fact_transfers for a complete view of token movements.
+5. Use payload_function in fact_transactions to analyze popular contract interactions.
+6. Remember to divide non-decimal adjusted amounts by 1e8 for APT and by the token's decimals for other tokens.
