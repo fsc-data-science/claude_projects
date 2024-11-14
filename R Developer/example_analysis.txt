@@ -1,0 +1,55 @@
+library(dplyr)
+library(plotly)
+
+cyl_splits <- split(mtcars, mtcars$cyl)
+
+cyl_models <- lapply(cyl_splits, function(x){
+  lm(mpg ~ hp, data = x)
+})
+
+cyl_forecasts <- {
+  # data frame for cylinder level lm forecasts against hp
+  res_ <- data.frame(
+    cyl = numeric(0),
+    hp = numeric(0),
+    mpg = numeric(0)
+  )
+  
+  # Loop through cylinders making individual linear models
+  for(i in 1:length(cyl_splits)){
+  mpg_pred <- as.numeric(predict.lm(cyl_models[[i]], 
+               newdata = data.frame(hp = cyl_splits[[i]]$hp)))
+  
+  temp_cyl <- rep(names(cyl_splits)[i], length(cyl_splits[[i]]$hp))
+  
+  temp_df <- data.frame(
+    cyl = temp_cyl,
+    hp = cyl_splits[[i]]$hp,
+    mpg = mpg_pred
+  )
+  
+  res_ <- rbind.data.frame(res_, temp_df)
+  }
+  res_
+}
+
+plot_ly() %>% 
+  add_trace(data = mtcars, 
+            x = ~hp,
+            y = ~mpg,
+            color = ~as.factor(cyl),
+            type = 'scatter',
+            mode = 'markers') %>%
+  add_trace(data = cyl_forecasts, 
+            x = ~hp, 
+            y = ~mpg,
+            color = ~as.factor(cyl), 
+            type = "scatter",
+            mode = "line",
+            showlegend = FALSE) %>% 
+  layout(
+    title = list(text = "Trends between Horsepower & MPG by Cylinder", y = 0.975),
+    xaxis = list(title = 'horsepower'),
+    yaxis = list(title = 'miles per gallon')
+  )
+

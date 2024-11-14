@@ -1,0 +1,93 @@
+/*
+compass renders requests from users who submit SQL queries. This allows for a variety of analytics on the keywords and columns requested across tables within a query.
+*/
+
+select
+id, -- unique id for the row in this table only
+statement_hash, -- md5 hash of the sql statement
+sql, -- the Snowflake SQL code itself
+column_metadata, -- array containing 3 arrays: colTypeMap (columns & type, e.g. timestamp_ntz), columns (just the column names), types (just the types) from the result of the query
+user_id, -- flipside specific id for the owner of the query
+tags, -- optional tags for where the query was submitted from, e.g., sdk_language: python, sdk version.
+created_at, -- when the run of the query was created
+updated_at -- in this table, an exact duplicate of created_at; essentially never use in this table.
+from 
+bi_analytics.compass_prod.sql_statements
+limit 5;
+
+-- unique users & queries that contain a chain name (or really any text in the sql statement)
+-- can double count if a query references two different chains (eg., union)
+select 
+count(distinct user_id) as n_users,
+count(distinct statement_hash) as n_unique_queries_with_berachain,
+count(1) as n_queries_with_berachain
+from 
+bi_analytics.compass_prod.sql_statements
+where SQL ILIKE '%berachain%'
+;
+
+
+-- Only for specific run time analysis. Rarely used but might be useful randomly. 
+
+select 
+user_id, 
+meta:sql as sql_,
+min(created_at) as first_time, 
+max(created_at) as most_recent,
+datediff('hour',first_time, most_recent ) as n_hours_between_first_recent,
+count(created_at) as n_created_ats,
+sum(value) as query_seconds_used,
+min(value) as fastest_run_ever,
+max(value) as slowest_run_ever,
+median(value) as median_runtime,
+avg(value) as avg_runtime,
+-- sum(case when value > (10*fastest_run_ever + 1) then 1 else 0 end) as n_excessively_slow,
+count(distinct meta:queryRunId) as n_query_runs,
+DIV0(n_query_runs, n_hours_between_first_recent) as typical_runs_per_hour
+from BI_ANALYTICS.COMPASS_PROD.USAGE_EVENTS
+where user_id = 'clwhx1eo20uxinb0txe7683f0'
+and metric = 'QUERY_SECONDS'
+group by user_id, sql_
+order by query_seconds_used desc;
+
+
+/*
+There may be instances where a user is curious about a specific customer's query history include consistency of their query runs. 
+Below includes 1 month of analytics on a user's queries including extracting data about sql_ text (to get exact matches of the same query on a schedule) 
+and getting the typical, fastest, and slowest run times of that query. 
+
+*/
+
+WITH base_data AS (
+  SELECT 
+    user_id,
+    meta:sql AS sql_,
+    meta:queryRunId AS query_run_id,
+    created_at,
+    value,
+    MIN(value) OVER (PARTITION BY user_id, meta:sql) AS fastest_run_ever
+  FROM BI_ANALYTICS.COMPASS_PROD.USAGE_EVENTS
+  WHERE user_id = 'clwhx1eo20uxinb0txe7683f0'
+    AND metric = 'QUERY_SECONDS'
+    and created_at >= '2024-08-01'
+    and created_at < '2024-09-01'
+)
+SELECT 
+  user_id, 
+  sql_,
+  MIN(created_at) AS first_time, 
+  MAX(created_at) AS most_recent,
+  DATEDIFF('hour', MIN(created_at), MAX(created_at)) AS n_hours_between_first_recent,
+  COUNT(created_at) AS n_created_ats,
+  SUM(value) AS query_seconds_used,
+  MIN(fastest_run_ever) AS fastest_run_ever,
+  MAX(value) AS slowest_run_ever,
+  MEDIAN(value) AS median_runtime,
+  AVG(value) AS avg_runtime,
+  SUM(CASE WHEN value > (5 * (fastest_run_ever + 1)) THEN 1 ELSE 0 END) AS n_excessively_slow,
+  SUM(CASE WHEN value > (5 * (fastest_run_ever + 1)) THEN value ELSE 0 END) AS n_excessively_slow_seconds_lost,
+  COUNT(DISTINCT query_run_id) AS n_query_runs,
+  DIV0(COUNT(DISTINCT query_run_id), DATEDIFF('hour', MIN(created_at), MAX(created_at))) AS typical_runs_per_hour
+FROM base_data
+GROUP BY user_id, sql_
+ORDER BY query_seconds_used DESC;

@@ -1,0 +1,125 @@
+Occasionally the user may indicate they want to export the image as a PNG. To do so, they should specify the chart size and use fixed font (px) sizing. They may also indicate a need for transparent background (   "backgroundColor": "rgba(0,0,0,0)" ).
+
+Use this as an example to help construct these ONLY when the user indicates a desire to export. And confirm transparency before using it (unless they request it of course then give it directly).
+
+
+{
+  "title": {
+    "margin": 10,
+    "text": "Despite overall address advantage there are more top quality addresses on Avalanche (7+)",
+    "style": {
+      "color": "#FFFFFF",
+      "fontSize": "36px",
+      "fontWeight": "bold"
+    }
+  },
+  "subtitle": {
+    "text": "Flipside scores are designed for cross-chain comparison. Higher scores have exponentially more onchain volume.",
+    "style": {
+      "color": "#FFFFFF",
+      "fontSize": "24px"
+    }
+  },
+  "xAxis": {
+    "title": {
+      "text": "",
+      "style": {
+        "fontSize": "18px",
+        "color": "#FFFFFF"
+      }
+    },
+    "labels": {
+      "style": {
+        "color": "#FFFFFF",
+        "fontSize": "32px"
+      },
+      "rotation": 0
+    },
+    "lineColor": "#666666",
+    "gridLineColor": "#444444"
+  },
+  "yAxis": [
+    {
+      "title": {
+        "text": "# Flipside Score 1+ Addresses",
+        "style": {
+          "fontSize": "24px",
+          "color": "#FFFFFF",
+          "fontWeight": "bold"
+        }
+      },
+      "labels": {
+        "style": {
+          "color": "#FFFFFF",
+          "fontSize": "24px"
+        },
+        "format": "{value:,.0f}"
+      },
+      "gridLineColor": "#444444"
+    },
+    {
+      "title": {
+        "text": "",
+        "style": {
+          "fontSize": "14px"
+        }
+      },
+      "opposite": true
+    }
+  ],
+  "legend": {
+    "enabled": true,
+    "margin": 20,
+    "padding": 20,
+    "itemStyle": {
+      "color": "#FFFFFF",
+      "fontSize": "18px"
+    }
+  },
+  "plotOptions": {
+    "series": {},
+    "column": {
+      "borderWidth": 0,
+      "groupPadding": 0.1,
+      "pointPadding": 0
+    }
+  },
+  "chart": {
+    "type": "column",
+    "width": 1200,
+    "height": 800,
+    "spacingTop": 30,
+    "spacingLeft": 30,
+    "spacingRight": 30,
+    "spacingBottom": 30,
+    "backgroundColor": "rgba(0,0,0,0)"
+  },
+  "colors": [
+    "#FFFFFF",
+    "#FF0000",
+    "#FF00FF",
+    "#FFD1B3",
+    "#C7B6FF",
+    "#99CCFF",
+    "#DDDDDD",
+    "#EEEEEE",
+    "#D8BFD8",
+    "#FFB3B3",
+    "#B3D9FF",
+    "#FFD1B3",
+    "#B3ECFF",
+    "#B3FFF0",
+    "#FFB3D9"
+  ],
+  "tooltip": {
+    "style": {
+      "color": "#FFFFFF",
+      "fontSize": "14px"
+    },
+    "shared": true,
+    "useHTML": true,
+    "borderColor": "#666666",
+    "pointFormat": "<div style=\"text-align: right;\"><b>{point.y:,.0f}</b> Address</div>",
+    "headerFormat": "<div style=\"text-align: center;\"><b>{point.key}</b></div>"
+  }
+}

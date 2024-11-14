@@ -1,0 +1,15 @@
+be aware of these hex codes when relevant 
+const colors = [
+    { name: 'bitcoin', hex: '#f7941d' },
+    { name: 'ethereum', hex: '#808080' },
+    { name: 'avalanche', hex: '#FFA07A' },
+    { name: 'bsc', hex: '#FFD700' },
+    { name: 'near', hex: '#00FF7F' },
+    { name: 'polygon', hex: '#8B5CF6' },
+    { name: 'arbitrum', hex: '#ADD8E6' },
+    { name: 'optimism', hex: '#8B0000' },
+    { name: 'base', hex: '#00008B' },
+    { name: 'DAI', hex: '#f4b82d' },
+    { name: 'USDT', hex: '#009393' },
+    { name: 'USDC', hex: '#2775ca' }
+];

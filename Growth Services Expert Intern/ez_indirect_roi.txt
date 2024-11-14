@@ -1,0 +1,15 @@
+/*
+Indirect ROI is the total transfer volume in 3 months after the user's first flipside quest, excluding all their flipside quest transactions.
+*/
+
+-- this table identifies the usd denominated total transfer volume (usd_volume) of all transactions a user (wallet_address) does on a chain
+-- across 4 timeframes: the 90 days before their first quest, then the volume in each of months 1, 2, 3 after their first quest. 
+select 
+chain, -- the chain the wallet_address is active on. Currently supporting near, avalanche, kaia, aptos.  
+wallet_age, -- one of 'New Address' (brand new), 'Existing Address' (has been active in last 90 days), 'Existing Reactivated' (address went dormat for 90+ days and then reactivated) 
+timeframe, -- one of '0_pre_90_day', '1_post_first_month', '2_post_second_month', '3_post_third_month': Respectively, 90 days before their first Flipside quest, then 1, 2, and 3 months after their first Flipside Quest.
+wallet_address, -- the address on the chain being referenced
+usd_volume -- total transfer volume for a wallet address in the timeframe excluding ALL volume related to any and all Flipside quests the address participated in.
+from 
+BI_ANALYTICS.EARN.EZ_LAUNCH_INDIVIDUAL_ADDRESS_LTV
+limit 10

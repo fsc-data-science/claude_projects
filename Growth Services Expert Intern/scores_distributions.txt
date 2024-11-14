@@ -1,0 +1,47 @@
+-- this table is accessible in flipside studio, underlying address specific scores are not.
+-- allows for comparison of chains by count of users within each score tier. 
+
+select 
+chain, -- the blockchain, e.g., aptos, arbitrum, avalanche, base.
+score_date, -- the date when scores for all users on the chain were calculated.
+score, -- The score itself, i.e., 0, 1, 2, 3, etc. up to 15.
+count_with_score -- The # of addresses with that score. 
+from datascience_public_misc.score_analytics.chain_score_distribution 
+limit 10;
+
+-- use this query for calculating proportions given counts, this self join is required due to how the total is not directly put into the original data.
+with n_total AS (
+select 
+chain, sum(count_with_score) as n_total 
+ from 
+DATASCIENCE_PUBLIC_MISC.SCORE_ANALYTICS.CHAIN_SCORE_DISTRIBUTION
+where score_date = (select max(score_date) from DATASCIENCE_PUBLIC_MISC.SCORE_ANALYTICS.CHAIN_SCORE_DISTRIBUTION where chain = '{{Chain}}')
+and chain IN ('{{Chain}}')
+group by chain
+)
+
+select chain, score, count_with_score,
+n.n_total,
+DIV0(count_with_score, n.n_total)*100 as share_with_score
+from DATASCIENCE_PUBLIC_MISC.SCORE_ANALYTICS.CHAIN_SCORE_DISTRIBUTION a
+   left join n_total n USING (chain)
+where score_date= (select max(score_date) from DATASCIENCE_PUBLIC_MISC.SCORE_ANALYTICS.CHAIN_SCORE_DISTRIBUTION where chain = '{{Chain}}')
+and chain IN ('{{Chain}}')
+;
+
+/*
+Distributions and proportions are available at this Flipside Dashboard with clickable chain parameters if the user wants to visualize the current scores. 
+https://flipsidecrypto.xyz/charliemarketplace/chain-score-distributions-dSaDJI
+*/
+
+-- This table is accessible in flipside studio for highcharts viewing
+-- most useful for seeing scores over time at chain level. 
+select 
+chain, -- the blockchain, e.g., aptos, arbitrum, avalanche, base.
+score_date, -- the date when scores for all users on the chain were calculated.
+median_score, -- The median score across all scored addresses on the chain-score_date. .e., 0, 1, 2, 3, etc. up to 15.
+avg_score, -- the average score across all scored addresses on the chain as of the score_date
+percentile90_score, -- 90th percentile score (uses approximation for speed which is fine) 90% of users have this score or lower. 
+percentile99_score -- 99th percentile score, i.e., top 1% active users have this score or higher.
+from 
+datascience_public_misc.score_analytics.chain_score_spread limit 10;

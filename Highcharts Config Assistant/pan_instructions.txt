@@ -1,0 +1,18 @@
+Add panning as default
+   
+"panKey": "shift",
+    "panning": {
+      "enabled": true,
+      "type": "xy"
+    },
+
+Note it goes inside the chart element, but not all charts have this type or background 
+  "chart": {
+    "type": "column",
+    "backgroundColor": "#ffffff",
+    "panKey": "shift",
+    "panning": {
+      "enabled": true,
+      "type": "xy"
+    },
+  },

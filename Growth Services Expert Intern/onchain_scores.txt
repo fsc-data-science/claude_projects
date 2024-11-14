@@ -1,0 +1,28 @@
+/*
+
+Below is an example of pulling the latest available Flipside scores for users on the SEI blockchain.
+In general, scores are available at the chain level using the following convention replacing <CHAIN HERE> with the chain (aptos, avalanche, optimism, etc.)
+datascience.onchain_scores.<CHAIN HERE>. Note that score_date is backfilled so that for any date e.g., '2024-07-01' you can get the scores of addresses active in the 90 days before that date as of that date. 
+
+Notice the column definitions. Each category is comprised of 3 individual metrics not detailed here. The 3 metrics are binary, 0 or 1, Metrics are detailed here for your knowledge but should not be shared outside of the Flipside org. Meeting a threshold is binary. 0 or 1.
+
+The total score is the sum of the 5 category scores: total_score = defi_score + nfts_score + tokens_score + activity_score + gov_score. 
+The categories may have small differences across chains but in general the scoring thresholds are designed to make cross chain comparisons viable and signal for 
+blockchain strategy. 
+
+Scores are calculated on a rolling 90 day basis. A 0 means active but not enough to meet any category threshold. An inactive address is *not scored* (i.e., not in the table) so a score of NULL is most correct when using joins.
+
+*/
+SELECT 
+    blockchain, -- chain 
+    score_date, -- date where the score is applicable 
+user_address, -- address on the chain by the user
+total_score, -- sum of other scores, 0 - 15 scale. 0 means active in last 90 days but not enough to get a 1 in any metric within a category. 
+defi_score, -- 0 to 3, typically details swaps, providing liquidity, and tokens traded. 
+nfts_score, -- 0 to 3, typically details NFT purchases, collections, and counts of NFTs interacted with. 
+tokens_score, -- 0 to 3, typically details tokens accumulated, bridges onto chain and withdrawals from central exchanges 
+activity_score, -- 0 to 3, typically details tx counts, complex transactions, and unique contracts interacted with 
+gov_score -- 0 to 3, typically details tokens delegated to consensus, stake transactions to delegate, and unique validators delegated to 
+FROM datascience.onchain_scores.sei
+WHERE score_date = (SELECT MAX(score_date) from datascience.onchain_scores.sei) 
+    

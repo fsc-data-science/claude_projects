@@ -1,0 +1,32 @@
+/*
+Snowflake SQL. Internal analytics only (this is not queryable from the data studio only internal Snowflake).
+This table aggregates key stats among participants of the quest program.
+*/
+
+select 
+dim_user_id, -- canonical reference to a particular user, rarely used if ever.
+studio_profile_id, -- canonical reference to the user's account in Flipside Studio, rarely used if ever. 
+studio_user_id, -- canonical reference to the user id in Flipside studio, rarely used if ever.
+user_score_id, -- canonical reference to the user's Flipside score, rarely used if ever.
+updated_at, -- last time the row was changed, typically to change the status or infill the USD value of tokens, rarely used for analytics if ever.
+validated_at, -- when the tx related to the user-quest was confirmed to exist and match the quest criteria, rarely for analytics used if ever. NULL for Status STARTED.
+validation_started_at, -- validation takes time, this is the start time of validation, rarely used for analytics if ever. NULL for Status STARTED.
+bucket_id, -- identifies which reward tier a user qualifies for in the quest, rarely used if ever. Useful to identify if higher fixed rewards for higher scores were used. 
+ecosystem, -- chain the quest is for, e.g., aptos
+quest_id, -- specific ID for the quest 1:1 with quest_slug
+quest_slug, -- human readable identification of a quest 1:1 with quest_id
+agent_address, -- the address of the quest transaction do-er, for most purposes, the user's ecosystem chain specific address. Users (studio_user_id for example) may have multiple addresses on multiple chains (ecosystem). 
+created_at as user_quest_date, -- the datetime the user-quest row was created, typically when the user (Status) STARTED the quest, can differ for a given quest as users do them on different days. 
+score, -- the Flipside Score for the user (agent_address) on the chain (ecosystem) using datascience.onchain_scores.[CHAINHERE] as of the created_at (user quest date)
+status, -- state of the user-quest as of the updated_at. Can be 1 of STARTED, VALIDATING, COMPLETED, CLAIMED, FAILED. Quests are started, then validated, once complete, the user can claim the reward (token_amount) assuming the transaction provided matched the quest conditions (otherwise it fails validation).
+reward_amount, -- maximum amount of tokens provided to those completing the quest. Can differ by bucket_id, i.e., the user's score.
+reward_type, -- either FIXED or VOLUME_PERCENTAGE indicating a fixed token reward or a % of the relevant USD denominated protocol volume from the quest tx.
+currency, -- The token (e.g., NEAR, APT, etc.) that reward_amount and token_amount and token_volume are all denominated in. Typically the chain (ecosystem) primary asset.
+token_amount, -- the amount of tokens actually received as a reward (e.g., if type is VOLUME_PERCENTAGE and they do a low amount, they will not get the total reward_amount) 
+usd_amount, -- usd value of the token_amount, i.e., the denominator for most quest related ROI analyses as the USD reward for doing the quest.
+token_volume, -- currency denominated transfer volume of the quest transaction, e.g., for a deposit quest the amount of tokens deposited. For VOLUME_PERCENTAGE quests this would be the value used to determine the token_amount actually claimable by the address.
+fee_volume, -- currency denominated transaction costs for the quest transaction.
+total_volume, -- token_volume + fee_volume
+total_volume_usd, -- usd denominated value of the total_volume. This is the numerator for most quest related ROI analysis. 
+user_quest_count -- integer count of how many quests the user has done, e.g., this is the 14th quest. Counts FAILED status as well as other status.
+from product_analytics.quests.ez_user_quests 
