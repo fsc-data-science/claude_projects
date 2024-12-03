@@ -1,0 +1,113 @@
+Schema: defi
+
+Standard Columns (present in all tables unless otherwise noted):
+- block_id: Height of the chain this block corresponds with
+- block_timestamp: UTC timestamp of the block, primary index column for time-based queries
+- tx_id: Unique identifier for each transaction (base58 encoded)
+- succeeded: Boolean indicating if the operation was successful
+
+Table: ez_dex_swaps
+Purpose: Provides enriched swap data across various Solana DEX protocols.
+Key Columns:
+- swap_program: Name of DEX protocol (e.g., 'Raydium', 'Phoenix')
+- program_id: Specific program handling the swap
+- swapper: Public key of account initiating swap
+- swap_from_mint: Token mint address being swapped from
+- swap_from_symbol: Symbol of token being swapped from
+- swap_from_amount: Decimal-adjusted amount being swapped
+- swap_from_amount_usd: USD value of tokens being swapped
+- swap_to_mint: Token mint address being swapped to
+- swap_to_symbol: Symbol of token being swapped to
+- swap_to_amount: Decimal-adjusted amount received
+- swap_to_amount_usd: USD value of tokens received
+
+Table: fact_swaps
+Purpose: Records raw swap events from DEX protocols.
+Key Columns:
+- swapper: Public key of swapping account
+- swap_from_amount: Raw amount being swapped
+- swap_from_mint: Token mint address being swapped from
+- swap_to_amount: Raw amount received
+- swap_to_mint: Token mint address being received
+- program_id: Program executing the swap
+- swap_program: High level DEX program name
+
+Table: fact_liquidity_pool_actions
+Purpose: Tracks liquidity pool interactions.
+Key Columns:
+- program_id: LP program handling the action
+- action: Type of LP action (e.g., 'addLiquidityByStrategy', 'removeLiquidity')
+- liquidity_provider: Account providing/removing liquidity
+- liquidity_pool_address: Address of specific liquidity pool
+- amount: Amount of tokens involved
+- mint: Token mint address involved
+
+Table: fact_bridge_activity
+Purpose: Tracks cross-chain bridge transactions.
+Key Columns:
+- token_address: Token mint address being bridged
+- amount: Amount being bridged
+- destination_chain: Target blockchain
+- source_chain: Origin blockchain
+- bridge_address: Program handling the bridge operation
+
+Table: fact_token_burn_actions
+Purpose: Tracks token burning events.
+Key Columns:
+- mint: Token mint address being burned
+- burn_authority: Account authorized to burn tokens
+- amount: Amount of tokens burned (raw)
+- program_id: Program executing the burn
+
+Table: fact_token_mint_actions
+Purpose: Records token minting events.
+Key Columns:
+- mint: Token mint address being created
+- mint_authority: Account authorized to mint tokens
+- amount: Amount of tokens minted (raw)
+- recipient: Account receiving minted tokens
+- program_id: Program executing the mint
+
+Table: fact_swaps_jupiter_inner
+Purpose: Tracks individual swaps within Jupiter aggregator routes.
+Key Columns:
+- program_id: Jupiter program version
+- user: Account initiating the swap
+- input_mint: Token mint being swapped from
+- output_mint: Token mint being swapped to
+- in_amount: Amount being swapped (raw)
+- out_amount: Amount received (raw)
+- route_type: Jupiter internal route identifier
+
+Table: fact_swaps_jupiter_summary
+Purpose: Provides aggregated view of Jupiter swap routes.
+Key Columns:
+- user: Account performing the swap
+- in_mint: Initial token being swapped
+- out_mint: Final token received
+- in_amount: Total input amount across route
+- out_amount: Total output amount across route
+- route_plan: JSON describing swap route
+- num_swaps: Number of individual swaps in route
+
+Table: fact_stake_pool_actions
+Purpose: Tracks interactions with liquid staking pools.
+Key Columns:
+- pool_address: Stake pool account address
+- action_type: Type of pool action (deposit, withdraw)
+- staker: Account interacting with pool
+- validator: Validator account if applicable
+- amount: Amount of SOL/stake involved
+
+
+Common Usage Patterns:
+1. Use ez_dex_swaps for most swap analysis due to enriched data
+2. Join with price.ez_prices_hourly for custom USD calculations
+3. Analyze liquidity pool actions alongside swaps for full DEX activity
+4. Track bridge flows using fact_bridge_activity
+5. Monitor program_ids to distinguish between different DEX versions
+6. Use fact_swaps_jupiter_summary for high-level swap analysis
+7. Join inner and summary Jupiter tables for detailed routing analysis
+8. Track token supply changes through mint and burn actions
+
+Note: Unlike EVM chains, Solana DEX interactions use program calls rather than contract methods, and liquidity pools are represented as accounts rather than contracts.

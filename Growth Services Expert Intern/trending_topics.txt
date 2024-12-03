@@ -1,0 +1,47 @@
+/*
+The data science team monitors tweets from a set of specific key opinion leaders across different ecosystems at the daily level.
+These tables contain processed tweets and ai generated summaries at the ecosystem level derived from tweets. 
+
+*/
+
+select 
+CREATED_AT, -- When the tweet was created 
+DAY_, -- The day the tweet was posted 
+USERNAME, -- The twitter username of the tweeter
+TWEET_TEXT, -- Raw text of the tweet 
+TWEET_ID, -- Twitter ID, you can use this to generate a URL that pulls said tweet. `twitter.com/USERNAME/status/TWEET_ID` 
+USED_IN_SUMMARY -- Binary flag for whether the tweet has been used in summarization, if FALSE, it will be included in the next AI summary batch.
+FROM datascience_dev.trending_topics.processed_tweets
+LIMIT 5;
+
+
+/*
+CREATED_AT,DAY_,USERNAME,TWEET_TEXT,TWEET_ID,USED_IN_SUMMARY
+2024-10-26 18:00:23.000 Z,2024-10-26,sandeepnailwal,@0xMarcB @BanklessHQ @Optimism @unichain @inkonchain @Mint_Blockchain @zora @redstonexyz @soneium @Shape_L2 @modenetwork @BuildOnCyber @derivexyz @jonahrobrts https://t.co/X3n7vTgpr8,1850236046102986898,true
+2024-10-26 17:56:14.000 Z,2024-10-26,sandeepnailwal,@binji_x @BanklessHQ @Optimism @unichain @inkonchain @Mint_Blockchain @zora @redstonexyz @soneium @Shape_L2 @modenetwork @BuildOnCyber @derivexyz Great take!💜,1850234999053722023,true
+2024-10-26 18:00:49.000 Z,2024-10-26,sandeepnailwal,"RT @stader_polygon: AggLayer aims to unify all blockchains into a single, interconnected ecosystem.
+
+Let's take a look at how @0xPolygon is…",1850236153271906742,true
+2024-10-26 17:38:19.000 Z,2024-10-26,jessepollak,"RT @MurrLincoln: Introducing Based Agent: create AI agents with full onchain functionality on @base in less than 3 minutes.
+
+The era of Aut…",1850230492937036111,true
+2024-10-26 17:17:08.000 Z,2024-10-26,jessepollak,"RT @doms4ever: Our doxxed dev @dominosmusic explaining why he originally created our PFP project DOMS , and decided to hand draw It / relea…",1850225162706407847,true
+*/
+
+
+
+select 
+DAY_, -- Day of the tweets being summarized
+SUBJECT, -- AI generated subject of tweets within the day-ecosystem level 
+SUMMARY, -- AI generated summary of tweets within the day-ecosystem level
+SUMMARY_ID -- This ID is the concatenation of the DAY_ of tweets, the ecosystem of the tweets being generated, and then the date of summarization (most often the same as DAY_).
+from datascience_dev.trending_topics.ai_summary
+LIMIT 5
+;
+
+DAY_,SUBJECT,SUMMARY,SUMMARY_ID
+2024-09-15,EigenDA,"A notable project in the blockchain space, EigenDA is collaborating with Arbitrum to implement Fraud Proofs. This integration is contributing to the development of modular blockchain architecture.",2024-09-15_arbitrum_20240916
+2024-09-14,Polygon PoS,"Highlighted liquidity on Polygon PoS, with $1.95 billion in stablecoins noted for DeFi applications. This indicates significant financial activity and interest in the Polygon ecosystem.",2024-09-14_polygon_20240916
+2024-09-16,cbBTC,"Coinbase has introduced cbBTC, a new Bitcoin-backed token, potentially offering an alternative to existing wrapped Bitcoin solutions in the market.",2024-09-16_crypto news_20240916
+2024-09-15,Arbitrum,The leading Layer 2 blockchain solution is expanding its ecosystem with Orbit chains and integrating EigenDA with Fraud Proofs. This development showcases Arbitrum's commitment to advancing modular blockchain technology.,2024-09-15_arbitrum_20240916
+2024-09-16,BitGo,"BitGo has made controversial moves related to WBTC (Wrapped Bitcoin), causing speculation in the cryptocurrency community about potential impacts on the wrapped token ecosystem.",2024-09-16_crypto news_20240916

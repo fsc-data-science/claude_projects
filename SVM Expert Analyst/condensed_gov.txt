@@ -1,0 +1,161 @@
+NOTE: Some of these may only apply to Solana, not Eclipse. 
+
+Schema: gov
+
+Standard Columns (present in all tables unless otherwise noted):
+- block_id: Height of the chain
+- block_timestamp: UTC timestamp of the block
+- tx_id: Unique identifier for transaction
+- succeeded: Boolean for transaction success
+
+Table: dim_epoch
+Purpose: Tracks Solana epoch boundaries and validator participation.
+Key Columns:
+- epoch_id: Unique identifier for the epoch
+- start_block: First block in epoch
+- end_block: Last block in epoch
+- start_timestamp: Start time of epoch
+- end_timestamp: End time of epoch
+- validator_count: Number of active validators
+
+Table: fact_stake_accounts
+Purpose: Records staking positions and delegations.
+Key Columns:
+- stake_account: Account holding staked SOL
+- staker: Account authorized to stake
+- withdrawer: Account authorized to withdraw
+- validator: Validator being staked
+- stake_amount: Amount of SOL staked in lamports
+- activated_epoch: Epoch when stake activated
+- deactivating_epoch: Epoch when stake began deactivating
+
+
+Table: ez_staking_lp_actions
+Purpose: Tracks liquidity provider staking activities.
+Key Columns:
+- action_type: Type of staking action (deposit, withdraw)
+- pool_address: Liquidity pool being staked
+- staker_address: Account performing the stake
+- amount: Amount of LP tokens staked
+- program_id: Staking program
+
+Table: fact_block_production
+Purpose: Monitors validator block production performance.
+Key Columns:
+- validator_id: Validator producing the block
+- slot: Slot number in which block was produced
+- leader_slots: Number of slots validator was leader for
+- blocks_produced: Number of blocks actually produced
+- skipped_slots: Number of slots skipped
+
+Table: fact_gauges_creates
+Purpose: Records creation of gauge incentive mechanisms.
+Key Columns:
+- gauge_address: New gauge account created
+- creator: Account creating the gauge
+- pool_address: Associated liquidity pool
+- program_id: Gauge program
+
+Table: fact_gauges_votes
+Purpose: Tracks voting on gauge weight distribution.
+Key Columns:
+- voter: Account casting vote
+- gauge_address: Gauge being voted on
+- vote_weight: Weight of vote cast
+- program_id: Voting program
+
+Table: fact_gov_actions
+Purpose: Records governance-related actions.
+Key Columns:
+- governance_address: Address of governance program
+- action_type: Type of governance action
+- proposer: Account proposing action
+- parameters: JSON of governance parameters
+
+Table: fact_proposal_creation
+Purpose: Tracks creation of governance proposals.
+Key Columns:
+- proposal_address: New proposal being created
+- governance_address: Associated governance program
+- proposer: Account creating proposal
+- vote_type: Type of voting mechanism
+- parameters: JSON of proposal parameters
+
+Table: fact_proposal_votes
+Purpose: Records votes on governance proposals.
+Key Columns:
+- proposal_address: Proposal being voted on
+- voter: Account casting vote
+- vote: Vote choice cast
+- vote_weight: Weight of vote
+- governing_token_owner: Owner of governance tokens used
+
+Table: fact_rewards_fee
+Purpose: Tracks validator fee rewards.
+Key Columns:
+- validator: Validator receiving fee rewards
+- amount: Amount of rewards in lamports
+- epoch: Epoch when rewards were earned
+
+Table: fact_rewards_rent
+Purpose: Tracks rent collection and distribution.
+Key Columns:
+- recipient: Account receiving rent rewards
+- amount: Amount of rent in lamports
+- epoch: Epoch when rent was collected
+
+Table: fact_rewards_staking
+Purpose: Records staking rewards distribution.
+Key Columns:
+- validator: Validator address
+- staker: Account that staked with validator
+- amount: Reward amount in lamports
+- epoch: Epoch when rewards were earned
+- post_balance: Balance after rewards distribution
+
+Table: fact_rewards_voting
+Purpose: Tracks validator voting rewards.
+Key Columns:
+- validator: Validator receiving voting rewards
+- amount: Reward amount in lamports
+- epoch: Epoch when rewards were earned
+- commission: Validator's commission percentage
+
+Table: fact_validators
+Purpose: Provides validator performance and status information.
+Key Columns:
+- validator_address: Validator's vote account
+- node_pubkey: Validator's identity pubkey
+- commission: Current commission percentage
+- epoch_credits: Credits earned in current epoch
+- root_slot: Latest root slot processed
+- activated_stake: Total SOL staked with validator
+
+Table: fact_votes_agg_block
+Purpose: Aggregates validator voting activity by block.
+Key Columns:
+- validator_address: Validator voting
+- slot_height: Slot being voted on
+- confirmed_blocks: Number of blocks confirmed
+- vote_success: Boolean indicating successful vote submission
+
+Table: fact_vote_accounts
+Purpose: Tracks validator vote account configuration.
+Key Columns:
+- vote_pubkey: Validator's vote account address
+- authorized_withdrawer: Account authorized to withdraw rewards
+- authorized_voter: Account authorized to submit votes
+- root_slot: Latest root slot
+- votes: Array of recent vote history
+- epoch_credits: Array of epoch credit history
+
+Common Usage Patterns:
+1. Track validator performance through fact_block_production and fact_votes_agg_block
+2. Monitor rewards across different types using fact_rewards_* tables
+3. Analyze governance participation through proposal and voting tables
+4. Track gauge voting and liquidity incentives
+5. Monitor validator commission changes and stake distribution
+6. Use dim_epoch for time-based aggregations
+7. Track validator performance across epochs
+8. Analyze stake concentration and delegation patterns
+9. Monitor stake activation/deactivation cycles

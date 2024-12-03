@@ -1,0 +1,100 @@
+select 
+ID as dashboard_id, -- dashboard id 
+created_at, -- when dashboard created 
+created_by_id, -- user ID of creator of dashboard
+latest_slug, -- website URL slug for dashboard
+title, -- dashboard title 
+published_at, -- latest publish date 
+typename, -- dashboard is typename
+FROM bi_analytics.velocity_app_prod.dashboards limit 10;
+
+select 
+A as dashboard_id, -- dashboard ID for this table
+B as query_id -- Query ID for queries used in dashboards 
+from bi_analytics.velocity_app_prod._dashboards_to_queries limit 10;
+
+select 
+id as query_id , -- query ID 
+created_at, -- original creation date
+updated_at, -- last time query was edited 
+created_by_id, -- user ID of creator of dashboard
+name, -- query name
+statement, -- the SQL code of the query 
+slug, -- query name's slug for website URL
+latest_slug, -- latest update to a slug
+last_successful_query_run_id, -- query runs are unique for each run of a query, enables caching and identification of results 
+tables, -- array of tables used in the query statement 
+from bi_analytics.velocity_app_prod.queries 
+limit 10;
+
+select 
+A as query_id, -- query ID for queries with a relevant tag
+B as tags_id -- tags id for any queries with tags 
+from bi_analytics.velocity_app_prod._queries_to_tags limit 10;
+
+select 
+id as tags_id, -- tags used to categorize queries into major chains/protocols they use  
+name as tag_, -- the name of the tag, e.g., astroport, solana, near, etc. 
+created_at, -- when the tag was created 
+updated_at -- when the tag was updated, the same query can have or gain its tags 
+from bi_analytics.velocity_app_prod.tags limit 10;
+
+select 
+id as tweet_id, -- ID of the tweet containing the link to the flipside content, e.g. dashboard, can be appended to a twitter URL to get the tweet
+user_id, -- twitter ID of the user posting 
+user_followers, -- # of followers a user has 
+conversation_id, -- -- ID of top level tweet that contains the tweet_id in the replies, can match tweet_id. Typically when conversation_id does match tweet_id, that is the parent (top level) tweet in the thread. It is probably best to record at the conversation id level and get the max impressions and only count that 1 row as. 
+created_at, -- date of the conversation_id posted to twitter
+tweet_type, -- dashboard, text, tag etc. that are relevant for flipside engagement. 
+platform, -- the entity that is tagged (for tweet_type = tag) or entity owning the dashboard (e.g., Flipside, Dune) for tweet_type Dashboard
+clean_url, -- direct URL to the relevant content itself, may not be twitter can be the dashboard link. 
+RIGHT(SPLIT(clean_url, '?')[0]::string, 6) as try_slug_extract, -- attempt to pull the Flipside slug from the clean_url, only works for platform flipside
+tweet_url, -- URL to the conversation_id 
+like_count, -- # of likes for the id (tweet_id)
+impression_count, -- # of impressions of id 
+retweet_count, -- # of retweets
+quote_count, -- # quote tweets 
+from bi_analytics.twitter.tweet 
+limit 10;
+select 
+id as tweet_id, -- ID of the tweet containing the link to the flipside content, e.g. dashboard, can be appended to a twitter URL to get the tweet
+user_id, -- twitter ID of the user posting 
+user_followers, -- # of followers a user has 
+conversation_id, -- -- ID of top level tweet that contains the tweet_id in the replies, can match tweet_id. Typically when conversation_id does match tweet_id, that is the parent (top level) tweet in the thread. It is probably best to record at the conversation id level and get the max impressions and only count that 1 row as. 
+created_at, -- date of the conversation_id posted to twitter
+tweet_type, -- dashboard, text, tag etc. that are relevant for flipside engagement. 
+platform, -- the entity that is tagged (for tweet_type = tag) or entity owning the dashboard (e.g., Flipside, Dune) for tweet_type Dashboard
+clean_url, -- direct URL to the relevant content itself, may not be twitter can be the dashboard link. 
+RIGHT(SPLIT(clean_url, '?')[0]::string, 6) as try_slug_extract, -- attempt to pull the Flipside slug from the clean_url, only works for platform flipside
+tweet_url, -- URL to the conversation_id 
+like_count, -- # of likes for the id (tweet_id)
+impression_count, -- # of impressions of id 
+retweet_count, -- # of retweets
+quote_count, -- # quote tweets 
+from bi_analytics.twitter.tweet 
+limit 10;
+
+-- This attempts to get 1 row per twitter conversation, to avoid double counting dashboard impressions
+-- while also matching the user to their actual follower count and other counts via max() to ensure the 
+-- parent (top level) tweet is credited to the dashboard link. 
+
+select 
+conversation_id,
+user_id, 
+min(created_at) created_at, 
+platform,
+tweet_type,
+tweet_url,
+clean_url,
+RIGHT(SPLIT(clean_url, '?')[0]::string, 6) as try_slug_extract,
+max(user_followers) as user_followers,
+max(like_count) as like_count,
+max(impression_count) as impression_count,
+max(retweet_count) as retweet_count,
+max(quote_count) as quote_count
+from bi_analytics.twitter.tweet 
+where created_at >= '2024-01-01'
+and tweet_type = 'Dashboard'
+and platform = 'Flipside'
+group by conversation_id, user_id, platform, tweet_type, tweet_url, clean_url, try_slug_extract
+;

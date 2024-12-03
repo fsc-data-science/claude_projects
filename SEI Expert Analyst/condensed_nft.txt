@@ -1,0 +1,39 @@
+Schema: nft
+
+Standard Columns (present in most tables unless otherwise noted):
+- block_id: Block height of the chain
+- block_timestamp: UTC timestamp of the block
+- tx_id: Unique transaction identifier
+- tx_succeeded: Transaction success indicator
+
+Table: ez_nft_sales
+Purpose: Provides enriched NFT sale event data.
+Key Columns:
+- buyer_address: Purchaser of the NFT
+- seller_address: Seller of the NFT
+- nft_address: Contract address of the NFT collection
+- token_id: Unique identifier of the specific NFT
+- project_name: Name of the NFT collection
+- platform_address: Address of the NFT marketplace
+- platform_name: Name of the marketplace (e.g., 'pallet')
+- amount: Sale price in native currency
+- amount_usd: USD value of the sale
+- currency: Currency used for purchase (typically 'usei')
+
+Table: fact_nft_sales
+Purpose: Records raw NFT sale transactions.
+Key Columns:
+- nft_address: Contract address of the NFT
+- token_id: Unique identifier of the NFT
+- buyer_address: Purchaser address
+- seller_address: Seller address
+- amount_raw: Raw sale amount
+- platform_address: Marketplace contract address
+- platform_name: Marketplace name
+
+Common Usage Patterns:
+1. Use ez_nft_sales for most NFT analysis due to enriched data
+2. Track sales volumes by project or platform
+3. Analyze price trends in both native and USD terms
+4. Monitor marketplace activity and user behavior
+5. Join with core.dim_labels for additional context on addresses

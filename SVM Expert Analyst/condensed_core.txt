@@ -1,0 +1,122 @@
+Schema: core
+
+Standard Columns (present in most tables unless otherwise noted):
+- block_id: Height of the chain this block corresponds with
+- block_timestamp: UTC timestamp of the block, primary index column for time-based queries
+- tx_id: Unique identifier for each transaction (base58 encoded in Solana)
+
+Table: dim_idls
+Purpose: Provides Interface Definition Language (IDL) definitions for Solana programs.
+Key Columns:
+- program_id: The on-chain program identifier
+- idl: Full IDL JSON describing program interface and instruction formats
+- idl_hash: Hash of the IDL for versioning
+- is_valid: Boolean indicating if IDL is currently valid
+- backfill_status: Status of historical instruction decoding
+
+Table: dim_labels
+Purpose: Provides labels for Solana addresses (programs, accounts, etc.).
+Key Columns:
+- address: The Solana address being labeled 
+- address_name: Human readable name if available
+- label_type: High-level category (e.g., dex, token, nft)
+- label_subtype: Sub-category providing further detail
+- project_name: Name of project if applicable
+
+Table: ez_events_decoded
+Purpose: Provides decoded event data from program instructions.
+Key Columns:
+- tx_id: Transaction containing the event
+- index: Position of instruction in transaction
+- inner_index: Position within inner instructions (if applicable)
+- event_type: Type of event emitted
+- program_id: Program that emitted the event
+- decoded_instruction: Parsed instruction data
+- decoded_accounts: Array of involved account addresses
+- decoded_args: Decoded instruction arguments
+
+Table: fact_blocks
+Purpose: Records block-level information.
+Key Columns:
+- block_hash: Unique hash of this block
+- previous_block_hash: Hash of previous block
+- network: Network identifier (e.g., 'mainnet')
+
+Table: fact_transactions
+Purpose: Provides detailed transaction information.
+Key Columns:
+- signers: Array of public keys that signed transaction
+- recent_block_hash: Recent block hash used for transaction validation
+- fee: Transaction fee in lamports
+- succeeded: Boolean indicating transaction success
+- account_keys: Array of accounts referenced with metadata
+- pre_balances: Array of account balances before transaction
+- post_balances: Array of account balances after transaction
+- instructions: Array of instructions in transaction
+- inner_instructions: Array of inner instructions generated
+- units_consumed: Compute units used
+- units_limit: Maximum compute units allowed
+
+Table: fact_transfers
+Purpose: Tracks SOL and SPL token transfers.
+Key Columns:
+- from_address: Source account address
+- to_address: Destination account address
+- amount: Transfer amount (in lamports for SOL, raw for tokens)
+- mint: Token mint address (null for SOL transfers)
+- instruction_index: Index of transfer instruction
+
+Table: fact_token_balances
+Purpose: Records token account balance changes.
+Key Columns:
+- account_address: Token account address
+- mint: Token mint address
+- owner: Owner of token account
+- pre_balance: Balance before transaction
+- post_balance: Balance after transaction
+- pre_amount_adjusted: Pre-balance adjusted for decimals
+- post_amount_adjusted: Post-balance adjusted for decimals
+
+Table: fact_token_account_owners
+Purpose: Tracks ownership of token accounts over time.
+Key Columns:
+- account_address: Token account address
+- owner: Owner's public key
+- start_block_id: First block of ownership
+- end_block_id: Last block of ownership (null if current)
+
+Table: ez_signers
+Purpose: Provides detailed information about transaction signers and their permissions.
+Key Columns:
+- signer: Public key of the signing account
+- index: Position of signer in transaction
+- writable: Boolean indicating if signer has write permissions
+
+Table: fact_decoded_instructions
+Purpose: Provides decoded instruction data based on program IDLs.
+Key Columns:
+- index: Position of instruction in transaction
+- inner_index: Position within inner instructions
+- program_id: Program that executed the instruction
+- event_type: Type of event/instruction
+- decoded_instruction: Parsed instruction data from IDL
+
+Table: fact_events_inner
+Purpose: Records inner instructions generated during transaction execution.
+Key Columns:
+- instruction_index: Index of parent instruction
+- inner_index: Position within inner instructions
+- instruction_program_id: Program ID of parent instruction
+- program_id: Program ID of inner instruction
+- event_type: Type of event generated
+- instruction: Raw instruction data
+
+Common Usage Patterns:
+1. Join dim_labels with program_id or account addresses for context
+2. Use ez_events_decoded for high-level program interaction analysis
+3. fact_transfers joined with fact_token_balances for complete transfer analysis
+4. Use pre/post balances for exact balance change tracking
+5. Monitor compute units for transaction cost analysis
+6. Use ez_signers to analyze transaction authorization patterns
+7. Join fact_decoded_instructions with dim_idls for instruction context
+8. Track program interactions through fact_events_inner

@@ -1,0 +1,615 @@
+Chain: solana
+Schema: core
+Tables:
+    dim_labels,
+select 
+blockchain, -- Always 'solana' for this chain
+address, -- The program_id or account address being labeled  
+label_type, -- High-level category (e.g., dex, token, nft)
+label_subtype, -- Sub-category providing more detail
+address_name, -- Human readable name if available
+creator -- Source of the label (typically 'flipside')
+from solana.core.dim_labels
+limit 5;
+    dim_idls,
+select
+program_id, -- The on-chain program identifier
+idl, -- Interface Definition Language (IDL) JSON describing program interface
+idl_hash, -- Hash of the IDL for versioning
+is_valid, -- Boolean indicating if IDL is currently valid
+backfill_status -- Status of historical instruction decoding
+from solana.core.dim_idls
+limit 5;
+    fact_blocks,
+select 
+block_id, -- Unique identifier for the block
+block_timestamp, -- UTC timestamp of block creation
+block_hash, -- Unique hash of the block
+previous_block_hash, -- Hash of the previous block
+previous_block_id, -- ID of the previous block
+network, -- Network identifier (e.g., 'mainnet')
+chain_id -- Chain identifier ('solana')
+from solana.core.fact_blocks
+limit 5;
+    fact_transactions,
+select 
+block_id, -- Block containing this transaction
+block_timestamp, -- UTC timestamp from block
+tx_id, -- Unique transaction identifier (base58 encoded)
+recent_block_hash, -- Recent block hash used for transaction validation
+signers, -- Array of public keys that signed transaction
+fee, -- Transaction fee in lamports
+succeeded, -- Boolean indicating transaction success
+account_keys, -- Array of all accounts referenced in transaction with metadata
+pre_balances, -- Array of account balances before transaction
+post_balances, -- Array of account balances after transaction
+pre_token_balances, -- Array of token balances before transaction
+post_token_balances, -- Array of token balances after transaction
+instructions, -- Array of instructions in transaction
+inner_instructions, -- Array of inner instructions generated during execution
+log_messages, -- Array of program log messages
+units_consumed, -- Compute units used by transaction
+units_limit -- Maximum compute units allowed
+from solana.core.fact_transactions
+limit 5;
+    fact_events,
+select
+block_timestamp,
+block_id,
+tx_id, 
+signers,
+succeeded,
+index, -- Order of event within transaction
+event_type, -- Type of event emitted
+program_id, -- Program that emitted the event
+instruction, -- Raw instruction data
+inner_instruction -- Inner instruction data if applicable
+from solana.core.fact_events
+limit 5;
+    fact_events_inner,
+select
+block_timestamp,
+block_id,
+tx_id,
+instruction_index, -- Index of parent instruction
+inner_index, -- Index within inner instructions
+instruction_program_id, -- Program ID of parent instruction
+program_id, -- Program ID of inner instruction
+event_type,
+instruction -- Decoded instruction data
+from solana.core.fact_events_inner
+limit 5;
+    fact_transfers,
+select
+block_timestamp,
+block_id, 
+tx_id,
+from_address, -- Source account address
+to_address, -- Destination account address
+amount, -- Transfer amount (in lamports for SOL, raw amount for tokens)
+mint, -- Token mint address (null for SOL transfers)
+succeeded, -- Transfer success flag
+instruction_index -- Index of transfer instruction
+from solana.core.fact_transfers
+limit 5;
+    fact_token_balances,
+select  
+block_timestamp,
+block_id,
+tx_id,
+account_address, -- Token account address
+mint, -- Token mint address
+owner, -- Owner of token account
+pre_balance, -- Balance before transaction
+post_balance, -- Balance after transaction
+pre_amount_adjusted, -- Pre-balance adjusted for decimals
+post_amount_adjusted -- Post-balance adjusted for decimals
+from solana.core.fact_token_balances
+limit 5;
+    fact_token_account_owners,
+select
+account_address, -- Token account address
+owner, -- Owner public key
+start_block_id, -- First block where ownership observed
+end_block_id -- Last block where ownership observed (null if current)
+from solana.core.fact_token_account_owners
+limit 5;
+Tables:
+    ez_signers,
+select 
+block_timestamp, -- UTC timestamp of the block
+block_id, -- Height of the chain this block corresponds with
+tx_id, -- Unique transaction identifier (base58 encoded)
+index, -- Position of signer in transaction
+signer, -- Public key of the signing account
+writable -- Boolean indicating if signer has write permissions
+from solana.core.ez_signers
+limit 5;
+    fact_decoded_instructions,
+select 
+block_timestamp, -- UTC timestamp of the block
+block_id, -- Height of the chain this block corresponds with
+tx_id, -- Unique transaction identifier
+signers, -- Array of transaction signers
+index, -- Position of instruction in transaction
+inner_index, -- Position within inner instructions (null for top-level)
+program_id, -- Program that executed the instruction
+event_type, -- Type of event/instruction
+decoded_instruction -- Parsed instruction data based on program IDL
+from solana.core.fact_decoded_instructions
+limit 5;
+    fact_events_inner,
+select 
+block_timestamp, -- UTC timestamp of the block
+block_id, -- Height of the chain this block corresponds with
+tx_id, -- Unique transaction identifier
+signers, -- Array of transaction signers
+succeeded, -- Boolean indicating if transaction succeeded
+instruction_index, -- Index of parent instruction
+inner_index, -- Position within inner instructions
+instruction_program_id, -- Program ID of parent instruction
+program_id, -- Program ID of inner instruction
+event_type, -- Type of event generated
+instruction -- Raw instruction data
+from solana.core.fact_events_inner
+limit 5;
+Schema: defi
+Tables:
+    ez_dex_swaps,
+select 
+swap_program, -- Name of DEX program (e.g., 'Raydium Liquidity Pool V4', 'phoenix')
+block_id,
+block_timestamp,
+tx_id,
+program_id, -- Program handling the swap
+swapper, -- Public key of account initiating swap
+swap_from_mint, -- Token mint address being swapped from
+swap_from_symbol, -- Token symbol being swapped from
+swap_from_amount, -- Amount being swapped (decimal adjusted)
+swap_from_amount_usd, -- USD value of amount being swapped
+swap_to_mint, -- Token mint address being swapped to
+swap_to_symbol, -- Token symbol being swapped to
+swap_to_amount, -- Amount received (decimal adjusted)
+swap_to_amount_usd -- USD value of amount received
+from solana.defi.ez_dex_swaps
+limit 5;
+    fact_swaps,
+select 
+block_timestamp,
+block_id,
+tx_id,
+succeeded,
+swapper, -- Public key of swapping account
+swap_from_amount, -- Raw amount being swapped
+swap_from_mint, -- Token mint address being swapped from
+swap_to_amount, -- Raw amount received
+swap_to_mint, -- Token mint address being received
+program_id, -- Program executing the swap
+swap_program -- High level DEX program name
+from solana.defi.fact_swaps
+limit 5;
+    fact_liquidity_pool_actions,
+select 
+block_id,
+block_timestamp,
+tx_id,
+succeeded,
+program_id, -- LP program handling the action
+action, -- Type of LP action (e.g., 'addLiquidityByStrategy')
+liquidity_provider, -- Account providing liquidity
+liquidity_pool_address, -- Address of the specific liquidity pool
+amount, -- Amount of tokens involved
+mint -- Token mint address involved
+from solana.defi.fact_liquidity_pool_actions
+limit 5;
+    fact_bridge_activity,
+select 
+block_id,
+block_timestamp,
+tx_id,
+succeeded,
+token_address, -- Token being bridged (mint address)
+amount, -- Amount being bridged
+destination_chain, -- Target chain for bridging
+source_chain, -- Origin chain (typically 'solana')
+bridge_address -- Program handling the bridge
+from solana.defi.fact_bridge_activity
+limit 5;
+    fact_token_burn_actions,
+select 
+block_timestamp, -- UTC timestamp of the block
+block_id, -- Height of the chain this block corresponds with
+tx_id, -- Unique transaction identifier
+succeeded, -- Boolean indicating if burn succeeded
+mint, -- Token mint address being burned
+burn_authority, -- Account authorized to burn tokens
+amount, -- Amount of tokens burned (raw)
+program_id -- Program executing the burn
+from solana.defi.fact_token_burn_actions
+limit 5;
+    fact_token_mint_actions,
+select 
+block_timestamp,
+block_id,
+tx_id,
+succeeded,
+mint, -- Token mint address being created
+mint_authority, -- Account authorized to mint tokens
+amount, -- Amount of tokens minted (raw)
+recipient, -- Account receiving minted tokens
+program_id -- Program executing the mint
+from solana.defi.fact_token_mint_actions
+limit 5;
+    fact_swaps_jupiter_inner,
+select 
+block_timestamp,
+block_id,
+tx_id,
+succeeded,
+program_id, -- Jupiter program version
+user, -- Account initiating the swap
+input_mint, -- Token mint being swapped from
+output_mint, -- Token mint being swapped to
+in_amount, -- Amount being swapped (raw)
+out_amount, -- Amount received (raw)
+route_type -- Jupiter internal route identifier
+from solana.defi.fact_swaps_jupiter_inner
+limit 5;
+    fact_swaps_jupiter_summary,
+select 
+block_timestamp,
+block_id,
+tx_id,
+succeeded,
+user, -- Account performing the swap
+in_mint, -- Initial token being swapped
+out_mint, -- Final token received
+in_amount, -- Total input amount across route
+out_amount, -- Total output amount across route
+route_plan, -- JSON describing swap route
+num_swaps -- Number of individual swaps in route
+from solana.defi.fact_swaps_jupiter_summary
+limit 5;
+    fact_stake_pool_actions,
+select 
+block_timestamp,
+block_id,
+tx_id,
+succeeded,
+pool_address, -- Stake pool account address
+action_type, -- Type of pool action (deposit, withdraw, etc.)
+staker, -- Account interacting with pool
+validator, -- Validator account if applicable
+amount, -- Amount of SOL/stake involved
+program_id -- Stake pool program
+from solana.defi.fact_stake_pool_actions
+limit 5;
+Schema: nft
+Tables:
+    fact_nft_burn_actions,
+select 
+block_timestamp,
+block_id,
+tx_id,
+succeeded,
+program_id, -- Program executing the burn
+mint_address, -- NFT token mint being burned
+burn_authority, -- Account authorized to burn
+amount, -- Amount burned (typically 1 for NFTs)
+from solana.nft.fact_nft_burn_actions
+limit 5;
+    fact_nft_mint_actions,
+select 
+block_timestamp,
+block_id,
+tx_id,
+succeeded,
+program_id, -- Program executing the mint
+mint_address, -- New NFT token mint being created
+mint_authority, -- Account authorized to mint
+recipient, -- Account receiving the NFT
+amount, -- Amount minted (typically 1 for NFTs)
+metadata_program -- Metadata program used (typically Metaplex)
+from solana.nft.fact_nft_mint_actions
+limit 5;
+    dim_nft_metadata,
+select 
+mint_address, -- NFT token mint address
+collection_id, -- Collection identifier
+collection_name, -- Name of NFT collection
+token_name, -- Individual NFT name
+token_uri, -- Metadata URI
+verified -- Verification status of collection
+from solana.nft.dim_nft_metadata
+limit 5;
+    fact_nft_mints,
+select 
+block_timestamp,
+block_id,
+tx_id,
+succeeded,
+mint_address, -- New NFT mint address created
+mint_amount, -- Usually 1 for NFTs
+minter, -- Account minting the NFT
+recipient -- Account receiving the minted NFT
+from solana.nft.fact_nft_mints
+limit 5;
+    fact_nft_sales,
+select 
+block_timestamp,
+block_id,
+tx_id,
+succeeded,
+program_id, -- Marketplace program
+seller,
+buyer,
+mint_address, -- NFT being sold
+sale_amount, -- Price in lamports if SOL, raw amount if SPL
+payment_mint, -- Token used for payment (SOL or SPL token)
+fee_amount -- Marketplace fees
+from solana.nft.fact_nft_sales
+limit 5;
+Schema: gov
+Tables:
+    ez_staking_lp_actions,
+select 
+block_timestamp,
+block_id,
+tx_id,
+succeeded,
+action_type, -- Type of staking action (deposit, withdraw)
+pool_address, -- Liquidity pool being staked
+staker_address, -- Account performing the stake
+amount, -- Amount of LP tokens staked
+program_id -- Staking program
+from solana.gov.ez_staking_lp_actions
+limit 5;
+    fact_block_production,
+select 
+block_timestamp,
+block_id,
+validator_id, -- Validator producing the block
+slot, -- Slot number in which block was produced
+leader_slots, -- Number of slots validator was leader for
+blocks_produced, -- Number of blocks actually produced
+skipped_slots -- Number of slots skipped
+from solana.gov.fact_block_production
+limit 5;
+    fact_gauges_creates,
+select 
+block_timestamp,
+block_id,
+tx_id,
+succeeded,
+gauge_address, -- New gauge account created
+creator, -- Account creating the gauge
+pool_address, -- Associated liquidity pool
+program_id -- Gauge program
+from solana.gov.fact_gauges_creates
+limit 5;
+    fact_gauges_votes,
+select 
+block_timestamp,
+block_id,
+tx_id,
+succeeded,
+voter, -- Account casting vote
+gauge_address, -- Gauge being voted on
+vote_weight, -- Weight of vote cast
+program_id -- Voting program
+from solana.gov.fact_gauges_votes
+limit 5;
+    fact_gov_actions,
+select 
+block_timestamp,
+block_id,
+tx_id,
+succeeded,
+program_id,
+governance_address, -- Address of governance program
+action_type, -- Type of governance action
+proposer, -- Account proposing action
+parameters -- JSON of governance parameters
+from solana.gov.fact_gov_actions
+limit 5;
+    fact_proposal_creation,
+select 
+block_timestamp,
+block_id,
+tx_id,
+succeeded,
+proposal_address, -- New proposal being created
+governance_address, -- Associated governance program
+proposer, -- Account creating proposal
+vote_type, -- Type of voting mechanism
+parameters, -- JSON of proposal parameters
+program_id -- Governance program
+from solana.gov.fact_proposal_creation
+limit 5;
+    fact_proposal_votes,
+select 
+block_timestamp,
+block_id,
+tx_id,
+succeeded,
+proposal_address, -- Proposal being voted on
+voter, -- Account casting vote
+vote, -- Vote choice cast
+vote_weight, -- Weight of vote
+governing_token_owner, -- Owner of governance tokens used
+program_id -- Governance program
+from solana.gov.fact_proposal_votes
+limit 5;
+    fact_rewards_fee,
+select 
+block_timestamp,
+block_id,
+tx_id,
+validator, -- Validator receiving fee rewards
+amount, -- Amount of rewards in lamports
+epoch -- Epoch when rewards were earned
+from solana.gov.fact_rewards_fee
+limit 5;
+    fact_rewards_rent,
+select 
+block_timestamp,
+block_id,
+tx_id,
+recipient, -- Account receiving rent rewards
+amount, -- Amount of rent in lamports
+epoch -- Epoch when rent was collected
+from solana.gov.fact_rewards_rent
+limit 5;
+    fact_rewards_staking,
+select 
+block_timestamp,
+block_id,
+tx_id,
+validator, -- Validator address
+staker, -- Account that staked with validator
+amount, -- Reward amount in lamports
+epoch, -- Epoch when rewards were earned
+post_balance -- Balance after rewards distribution
+from solana.gov.fact_rewards_staking
+limit 5;
+    fact_rewards_voting,
+select 
+block_timestamp,
+block_id,
+tx_id,
+validator, -- Validator receiving voting rewards
+amount, -- Reward amount in lamports
+epoch, -- Epoch when rewards were earned
+commission -- Validator's commission percentage
+from solana.gov.fact_rewards_voting
+limit 5;
+    fact_staking_lp_actions,
+select 
+block_timestamp,
+block_id,
+tx_id,
+succeeded,
+program_id,
+action_type, -- Type of staking action (stake, unstake)
+pool_address, -- Liquidity pool address
+staker_address, -- Account performing the staking action
+amount -- Amount of LP tokens staked/unstaked
+from solana.gov.fact_staking_lp_actions
+limit 5;
+    fact_validators,
+select 
+block_timestamp,
+block_id,
+validator_address, -- Validator's vote account
+node_pubkey, -- Validator's identity pubkey
+commission, -- Current commission percentage
+epoch_credits, -- Credits earned in current epoch
+root_slot, -- Latest root slot processed
+last_vote, -- Slot of last vote
+activated_stake, -- Total SOL staked with validator
+total_active_stake -- Total SOL staked across all validators
+from solana.gov.fact_validators
+limit 5;
+    fact_votes_agg_block,
+select 
+block_timestamp,
+block_id,
+validator_address, -- Validator voting
+slot_height, -- Slot being voted on
+confirmed_blocks, -- Number of blocks confirmed
+total_blocks, -- Total blocks in voting window
+vote_success -- Boolean indicating successful vote submission
+from solana.gov.fact_votes_agg_block
+limit 5;
+    fact_vote_accounts,
+select 
+block_timestamp,
+block_id,
+vote_pubkey, -- Validator's vote account address
+node_pubkey, -- Validator's identity pubkey
+authorized_withdrawer, -- Account authorized to withdraw rewards
+authorized_voter, -- Account authorized to submit votes
+commission, -- Current commission percentage
+root_slot, -- Latest root slot
+last_vote, -- Slot of last vote
+votes, -- Array of recent vote history
+epoch_credits -- Array of epoch credit history
+from solana.gov.fact_vote_accounts
+limit 5;
+Tables:
+    dim_epoch,
+select 
+epoch_id,
+start_block,
+end_block,
+start_timestamp,
+end_timestamp,
+validator_count
+from solana.gov.dim_epoch
+limit 5;
+    fact_stake_accounts,
+select 
+block_timestamp,
+block_id,
+stake_account, -- Account holding staked SOL
+staker, -- Account authorized to stake
+withdrawer, -- Account authorized to withdraw
+validator, -- Validator being staked
+stake_amount, -- Amount of SOL staked in lamports
+activated_epoch, -- Epoch when stake activated
+deactivating_epoch -- Epoch when stake began deactivating
+from solana.gov.fact_stake_accounts
+limit 5;
+Schema: stats
+Tables:
+    ez_core_metrics_hourly,
+select 
+hour, -- Hour timestamp for metrics
+active_addresses, -- Number of unique active addresses
+new_addresses, -- Number of new addresses created
+total_transactions, -- Total number of transactions
+successful_transactions, -- Number of successful transactions
+failed_transactions, -- Number of failed transactions
+total_fees, -- Total fees paid in lamports
+average_fee, -- Average fee per transaction
+total_compute_units, -- Total compute units consumed
+average_compute_units, -- Average compute units per transaction
+total_program_calls, -- Total number of program invocations
+unique_program_calls, -- Number of unique programs called
+native_transfers_amount, -- Total SOL transferred
+native_transfers_count -- Number of SOL transfers
+from solana.stats.ez_core_metrics_hourly
+limit 5;
+Schema: price
+Tables:
+    dim_asset_metadata,
+select 
+token_address, -- Token mint address
+blockchain, -- Always 'solana'
+symbol, -- Token symbol
+name, -- Token name
+decimals, -- Token decimal places
+is_native -- True for SOL, false for SPL tokens
+from solana.price.dim_asset_metadata
+limit 5;
+    ez_prices_hourly,
+select 
+hour, -- Hour timestamp
+token_address, -- Token mint address
+symbol,
+name,
+price, -- USD price at end of hour
+decimals,
+is_native, -- True for SOL
+is_imputed -- If price was estimated/carried forward
+from solana.price.ez_prices_hourly
+limit 5;
+Key Solana-Specific Notes:
+1. Uses program_id and mint addresses instead of contract addresses
+2. Native SOL transfers tracked separately from SPL token transfers
+3. Associated Token Accounts (ATAs) used for token ownership
+4. Instruction-based rather than function call based
+5. Lamports (0.000000001 SOL) used for native currency amounts
+6. Multiple DEX programs each with their own swap mechanics
+7. Epochs and stakes are first-class concepts
+8. Account model differs fundamentally from EVM

@@ -14,6 +14,16 @@ Key Columns:
 - label_type: High-level category describing the address's main function
 - label_subtype: Sub-category providing further detail
 
+Table: dim_labels
+Purpose: Provides labels for addresses (contracts and EOAs).
+Key Columns:
+- blockchain: Chain where contract address is labeled
+- creator: Entity that created the label
+- address: Contract or EOA address being labeled
+- address_name: Name of contract if available
+- label_type: Category (e.g., dapp, defi, cex, token)
+- label_subtype: Subcategory within label_type
+
 Table: ez_token_transfers
 Purpose: Tracks token transfer events on the NEAR blockchain.
 Key Columns:

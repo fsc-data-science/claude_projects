@@ -17,6 +17,17 @@ Key Columns:
 - is_primary: Indicates if it's the primary name for the owner
 - expiration_timestamp: When the name expires
 
+Table: dim_labels
+Purpose: Provides labels for addresses (contracts and EOAs).
+Key Columns:
+- blockchain: Chain where contract address is labeled
+- creator: Entity that created the label
+- address: Contract or EOA address being labeled
+- address_name: Name of contract if available
+- label_type: Category (e.g., dapp, defi, cex, token)
+- label_subtype: Subcategory within label_type
+
+
 Table: dim_tokens
 Purpose: Provides information about tokens on Aptos.
 Key Columns:

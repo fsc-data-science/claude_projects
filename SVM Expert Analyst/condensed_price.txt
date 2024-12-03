@@ -1,0 +1,28 @@
+Schema: price
+
+Table: dim_asset_metadata
+Purpose: Provides metadata for tokens across the Solana ecosystem.
+Key Columns:
+- token_address: Token mint address
+- symbol: Trading symbol
+- name: Token name
+- decimals: Number of decimal places
+- is_native: Boolean flag for SOL vs SPL tokens
+
+Table: ez_prices_hourly
+Purpose: Provides hourly price data for tokens.
+Key Columns:
+- hour: Hour timestamp for price point
+- token_address: Token mint address
+- price: USD price at end of hour
+- decimals: Token decimal places
+- is_native: True for SOL, false for SPL tokens
+- is_imputed: If price was estimated/carried forward
+
+Common Usage Patterns:
+1. Join with token_address and hour for USD conversions
+2. Use is_imputed to filter for actual vs estimated prices
+3. Reference decimals for proper amount adjustments
+4. Filter is_native for SOL-specific analysis
+
+Note: Unlike EVM chains, Solana uses mint addresses instead of contract addresses for tokens.

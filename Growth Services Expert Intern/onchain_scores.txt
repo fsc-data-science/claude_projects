@@ -12,6 +12,23 @@ blockchain strategy.
 
 Scores are calculated on a rolling 90 day basis. A 0 means active but not enough to meet any category threshold. An inactive address is *not scored* (i.e., not in the table) so a score of NULL is most correct when using joins.
 
+List of scored chains for awareness.
+APTOS
+ARBITRUM
+AVALANCHE
+AXELAR
+BASE
+BLAST
+ETHEREUM
+FLOW
+KAIA
+NEAR
+OPTIMISM
+POLYGON
+SEI
+SOLANA
+THORCHAIN
+
 */
 SELECT 
     blockchain, -- chain 

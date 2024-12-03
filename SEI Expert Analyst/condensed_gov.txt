@@ -1,0 +1,58 @@
+Schema: gov
+
+Purpose: Tracks governance, staking, and validator activities on Sei.
+
+Table: fact_governance_proposal_deposits
+Purpose: Records proposal deposits.
+Key Columns:
+- depositor: Address making the deposit
+- proposal_id: Unique proposal identifier
+- amount: Deposit amount
+- currency: Deposit currency (typically 'usei')
+
+Table: fact_governance_submit_proposal
+Purpose: Tracks proposal submissions.
+Key Columns:
+- proposer: Address submitting proposal
+- proposal_id: Unique identifier
+- proposal_type: Type of proposal
+- proposal_title: Title
+- proposal_description: Detailed description
+
+Table: fact_governance_votes
+Purpose: Records governance votes.
+Key Columns:
+- voter: Address casting vote
+- proposal_id: Proposal identifier
+- vote_option: Voting choice
+- vote_weight: Weight of vote
+- memo: Optional comment
+
+Table: fact_staking
+Purpose: Tracks staking activities.
+Key Columns:
+- action: Type of staking action
+- delegator_address: Staking address
+- validator_address: Validator receiving stake
+- amount: Staked amount
+- currency: Staking currency (typically 'usei')
+- redelegate_source_validator_address: Source validator for redelegations
+Note: Validators also participate in oracle price feeds
+
+Table: fact_staking_rewards
+Purpose: Records staking reward distributions.
+Key Columns:
+- delegator_address: Reward recipient
+- validator_address: Reward source
+- amount: Reward amount
+- currency: Reward currency
+- action: Type of reward action
+
+Common Usage Patterns:
+1. Track governance participation and voting patterns
+2. Monitor validator performance and rewards
+3. Analyze staking distribution across validators
+4. Track proposal lifecycle and outcomes
+5. Combine with oracle votes to analyze validator participation in both governance and price feeds
+
+Note: Sei validators play dual roles in governance and oracle systems

@@ -1,0 +1,36 @@
+Schema: price
+
+Note: Sei features a native oracle system where validators submit price feeds. This schema complements that system with historical price data.
+
+Table: ez_prices_hourly
+Purpose: Provides hourly price data for assets.
+Key Columns:
+- hour: Timestamp for the price data
+- token_address: Contract address of the token
+- symbol: Token symbol
+- name: Token name
+- price: USD price of the token
+- blockchain: Chain identifier
+- is_native: Flag for native token (sei)
+- is_imputed: Flag for imputed prices
+- is_deprecated: Flag for deprecated tokens
+Note: Can be joined with oracle votes for price feed analysis
+
+Table: dim_asset_metadata
+Purpose: Provides token metadata across chains.
+Key Columns:
+- token_address: Contract address of the token
+- asset_id: Unique identifier for the asset
+- symbol: Token symbol
+- name: Token name
+- blockchain: Chain identifier
+- provider: Source of price data
+
+Common Usage Patterns:
+1. Join ez_prices_hourly with core.fact_oracle_votes for comprehensive price analysis
+2. Use hourly prices for historical analysis and USD conversions
+3. Reference dim_asset_metadata for token details
+4. Track native sei token pricing
+5. Monitor IBC token prices on Sei
+
+Note: Consider both oracle and traditional price feeds when analyzing Sei assets

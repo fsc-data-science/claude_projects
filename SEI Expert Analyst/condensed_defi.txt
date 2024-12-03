@@ -1,0 +1,34 @@
+Schema: defi
+
+Note: Sei's DeFi ecosystem includes several native DEX platforms (Astroport, Fuzio, Seaswap) and integrates with the chain's native oracle system.
+
+Table: fact_dex_swaps
+Purpose: Records token swap events on Sei DEX platforms.
+Key Columns:
+- platform: DEX name (e.g., 'astroport', 'fuzio', 'seaswap')
+- swapper: Address initiating the swap
+- pool_address: Liquidity pool contract address
+- pool_name: Human-readable pool identifier
+- amount_in, currency_in: Input token amount and address
+- amount_out, currency_out: Output token amount and address
+Note: Captures activity across Sei's native DEX ecosystem.
+
+Table: fact_lp_actions
+Purpose: Tracks liquidity provider activities.
+Key Columns:
+- platform: DEX platform name
+- liquidity_provider_address: Address performing LP action
+- lp_action: Type of action (add_liquidity, remove_liquidity)
+- pool_address: Liquidity pool contract address
+- token1_amount, token1_currency: First token details
+- token2_amount, token2_currency: Second token details
+- lp_token_address: LP token contract address
+
+Common Usage Patterns:
+1. Analyze DEX activity by platform using fact_dex_swaps
+2. Track liquidity provision across different pools
+3. Compare trading volumes between Sei's native DEX platforms
+4. Join with core.fact_oracle_votes to analyze price impact on trading
+5. Use pool addresses to track specific trading pair activity
+
+Note: Price data for DeFi analysis often comes from Sei's native oracle system rather than external sources.

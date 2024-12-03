@@ -1,0 +1,60 @@
+Schema: core
+
+Standard Columns (present in most tables unless otherwise noted):
+- block_id: Block height of the chain
+- block_timestamp: UTC timestamp of the block, primary index column for time-based queries
+- tx_id: Unique identifier for each transaction
+- tx_succeeded: Boolean indicating if the transaction was successful
+
+Note: Sei has several unique features including address mapping between Sei and Sei EVM addresses, and a native oracle system for price feeds.
+
+Table: dim_address_mapping
+Purpose: Maps addresses between Sei's native and EVM chains.
+Key Columns:
+- sei_address: The native Sei blockchain address
+- evm_address: Corresponding address on Sei's EVM chain
+- block_timestamp_associated: When the mapping was created
+Note: Unique to Sei, enables cross-chain address resolution.
+
+Table: dim_labels
+Purpose: Provides labels and metadata for Sei addresses.
+Key Columns:
+- address: The Sei address associated with the label
+- address_name: Name attributed to the address
+- label_type: High-level category (e.g., dex, operator)
+- label_subtype: Sub-category providing further detail
+- project_name: Associated project name, if applicable
+
+Table: fact_oracle_votes
+Purpose: Records validator price feed votes for Sei's native oracle.
+Key Columns:
+- voter: Validator address submitting the price vote
+- tx_sender: Address initiating the oracle vote
+- amount: Price value being voted on
+- currency: Asset being priced
+Note: Sei-specific table supporting native price oracle functionality.
+
+Table: fact_transactions
+Purpose: Records detailed transaction information.
+Key Columns:
+- tx_from: Address initiating the transaction
+- codespace: Namespace for error handling
+- fee: Transaction fee in usei
+- gas_used: Computation units consumed
+- msgs: Array of messages in transaction
+Note: Includes oracle vote transactions unique to Sei.
+
+Table: fact_transfers
+Purpose: Tracks token transfers on Sei.
+Key Columns:
+- transfer_type: Type of transfer (e.g., 'SEI')
+- sender: Address sending tokens
+- receiver: Address receiving tokens
+- amount: Transfer amount
+- currency: Token being transferred (usually 'usei')
+
+Common Usage Patterns:
+1. Join dim_address_mapping with other tables to correlate native and EVM activities
+2. Use fact_oracle_votes to analyze validator price submissions
+3. Combine fact_transactions with oracle_votes for comprehensive price feed analysis
+4. Use block_timestamp for time-based filtering and analysis

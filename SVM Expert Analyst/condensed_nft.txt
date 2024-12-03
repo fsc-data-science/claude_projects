@@ -1,0 +1,69 @@
+Schema: nft
+
+Standard Columns (present in all tables unless otherwise noted):
+- block_id: Height of the chain this block corresponds with
+- block_timestamp: UTC timestamp of the block
+- tx_id: Unique identifier for each transaction
+- succeeded: Boolean indicating if the operation was successful
+
+Table: dim_nft_metadata
+Purpose: Stores metadata for NFT collections and tokens.
+Key Columns:
+- mint_address: NFT token mint address
+- collection_id: Identifier for the collection
+- collection_name: Name of NFT collection
+- token_name: Individual NFT name
+- token_uri: Metadata URI for the NFT
+- verified: Verification status of collection
+
+Table: fact_nft_mints
+Purpose: Records NFT minting events.
+Key Columns:
+- mint_address: New NFT mint address created
+- mint_amount: Amount minted (typically 1 for NFTs)
+- minter: Account performing the mint
+- recipient: Account receiving the minted NFT
+
+Table: fact_nft_sales
+Purpose: Tracks NFT sales across marketplaces.
+Key Columns:
+- program_id: Marketplace program
+- seller: Account selling the NFT
+- buyer: Account buying the NFT
+- mint_address: NFT being sold
+- sale_amount: Price in lamports if SOL, raw amount if SPL token
+- payment_mint: Token used for payment
+- fee_amount: Marketplace fees
+
+Table: fact_nft_burn_actions
+Purpose: Records NFT burning events.
+Key Columns:
+- program_id: Program executing the burn
+- mint_address: NFT token mint being burned
+- burn_authority: Account authorized to burn
+- amount: Amount burned (typically 1 for NFTs)
+
+Table: fact_nft_mint_actions
+Purpose: Records raw NFT minting events.
+Key Columns:
+- program_id: Program executing the mint
+- mint_address: New NFT token mint being created
+- mint_authority: Account authorized to mint
+- recipient: Account receiving the NFT
+- amount: Amount minted (typically 1 for NFTs)
+- metadata_program: Metadata program used (typically Metaplex)
+
+
+
+Common Usage Patterns:
+1. Join mint_address with dim_nft_metadata for collection context
+2. Track primary sales through fact_nft_mints
+3. Analyze secondary market through fact_nft_sales
+4. Monitor payment_mint to distinguish between SOL and SPL token sales
+5. Join mint_address with dim_nft_metadata for collection details
+6. Track primary market through fact_nft_mint_actions
+7. Monitor NFT burns through fact_nft_burn_actions
+8. Analyze secondary market through fact_nft_sales
+9. Use fact_nft_mint_actions to identify NFT creators/projects
+
+Note: Solana NFTs use the SPL Token standard with metadata programs, different from EVM's ERC-721/1155.

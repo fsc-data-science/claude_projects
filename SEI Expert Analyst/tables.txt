@@ -1,0 +1,252 @@
+Chain: sei
+
+Standard Columns (present in most tables unless otherwise noted):
+- block_id: Block height of the chain
+- block_timestamp: UTC timestamp of the block, primary index column for time-based queries
+- tx_id: Unique identifier for each transaction
+- tx_succeeded: Boolean indicating if the transaction was successful
+
+Schema: core
+ Tables: 
+    dim_address_mapping,
+select 
+block_timestamp_associated, -- timestamp when the address mapping was created
+block_id_associated, -- block number when the address mapping was created
+sei_address, -- native Sei address
+evm_address, -- corresponding Sei EVM address (unique to Sei chain)
+from sei.core.dim_address_mapping
+limit 2;
+
+    dim_labels,
+select 
+blockchain, -- chain identifier (sei)
+creator, -- entity creating the label (typically flipside)
+address, -- sei address being labeled
+label_type, -- category of the label (e.g., dex, operator)
+label_subtype, -- subcategory specification
+label, -- descriptive label
+address_name -- human readable name for the address
+from sei.core.dim_labels
+limit 2;
+
+    dim_tokens,
+select 
+currency, -- token address/identifier
+decimals, -- number of decimal places for the token
+token_name, -- full name of the token
+symbol -- token symbol/ticker
+from sei.core.dim_tokens
+limit 2;
+
+    fact_blocks,
+select 
+block_id, -- height of the block
+block_timestamp, -- UTC timestamp of block creation
+chain_id, -- network identifier (e.g., 'pacific-1')
+tx_count, -- number of transactions in block
+proposer_address, -- validator that proposed the block
+validator_hash, -- hash of current validator set
+header -- JSON object containing detailed block header information
+from sei.core.fact_blocks
+limit 2;
+
+    fact_msgs,
+select 
+tx_id, -- transaction identifier
+msg_group, -- group identifier for related messages
+msg_index, -- position of message within transaction
+msg_type, -- type of message (e.g., 'message', 'tx')
+msg -- JSON object containing the message details
+from sei.core.fact_msgs
+limit 2;
+
+    fact_msg_attributes,
+select 
+tx_id, -- transaction identifier
+msg_group, -- group identifier for related messages
+msg_index, -- position of message within transaction
+msg_type, -- type of message
+attribute_index, -- position of attribute within message
+attribute_key, -- key of the attribute (base64 encoded)
+attribute_value -- value of the attribute (base64 encoded)
+from sei.core.fact_msg_attributes
+limit 2;
+
+    fact_oracle_votes,
+select 
+tx_id, -- transaction identifier
+tx_sender, -- address initiating the oracle vote
+voter, -- validator address submitting the vote
+amount, -- price value being voted on
+currency, -- asset being priced
+msg_group, -- group identifier for related messages
+msg_sub_group -- sub-group identifier for related messages
+from sei.core.fact_oracle_votes
+limit 2;
+
+    fact_transactions,
+select 
+tx_id, -- unique transaction identifier
+tx_from, -- address initiating transaction
+codespace, -- namespace for error codes
+fee, -- transaction fee in usei
+gas_used, -- computation units consumed
+gas_wanted, -- computation units requested
+tx_code, -- transaction result code
+msgs -- array of messages contained in transaction
+from sei.core.fact_transactions
+limit 2;
+
+    fact_transfers,
+select 
+transfer_type, -- type of transfer (e.g., 'SEI')
+sender, -- address sending tokens
+amount, -- amount of tokens transferred
+currency, -- token being transferred (e.g., 'usei')
+receiver -- address receiving tokens
+from sei.core.fact_transfers
+limit 2;
+
+Schema: defi
+ Tables:
+    fact_dex_swaps,
+select 
+platform, -- DEX name (e.g., 'astroport', 'fuzio', 'seaswap')
+swapper, -- address initiating the swap
+amount_in, -- amount of input token
+currency_in, -- input token address/symbol
+amount_out, -- amount of output token
+currency_out, -- output token address/symbol
+pool_address, -- liquidity pool contract address
+pool_name -- human-readable pool identifier
+from sei.defi.fact_dex_swaps
+limit 2;
+
+    fact_lp_actions,
+select 
+platform, -- DEX name
+liquidity_provider_address, -- address performing LP action
+lp_action, -- type of action (e.g., 'add_liquidity', 'remove_liquidity')
+pool_address, -- liquidity pool contract address
+pool_name, -- human-readable pool identifier
+token1_amount, -- amount of first token
+token1_currency, -- first token address/symbol
+token2_amount, -- amount of second token
+token2_currency, -- second token address/symbol
+lp_token_address -- address of LP token received/burned
+from sei.defi.fact_lp_actions
+limit 2;
+
+Schema: nft
+ Tables:
+    ez_nft_sales,
+select 
+buyer_address, -- purchaser address
+seller_address, -- seller address
+nft_address, -- NFT contract address
+token_id, -- unique identifier of NFT
+project_name, -- collection name
+platform_address, -- marketplace contract address
+platform_name, -- marketplace name (e.g., 'pallet')
+amount, -- sale price
+amount_usd, -- USD value of sale
+currency -- currency used for purchase
+from sei.nft.ez_nft_sales
+limit 2;
+
+    fact_nft_sales,
+select 
+nft_address, -- NFT contract address
+token_id, -- unique identifier of NFT
+buyer_address, -- purchaser address
+seller_address, -- seller address
+amount_raw, -- raw sale amount
+currency, -- currency used for purchase
+platform_address, -- marketplace contract address
+platform_name -- marketplace name
+from sei.nft.fact_nft_sales
+limit 2;
+
+Schema: price
+ Tables:
+    dim_asset_metadata,
+select 
+token_address, -- contract address of token
+asset_id, -- unique identifier for the asset
+symbol, -- token symbol
+name, -- token name
+blockchain, -- chain identifier
+blockchain_id, -- chain unique identifier
+provider -- price data provider
+from sei.price.dim_asset_metadata
+limit 2;
+
+    ez_prices_hourly,
+select 
+hour, -- hour timestamp for price data
+token_address, -- contract address of token
+symbol, -- token symbol
+name, -- token name
+price, -- token price in USD
+blockchain, -- chain identifier
+is_native, -- boolean for native token
+is_imputed, -- boolean indicating if price was imputed
+is_deprecated -- boolean for deprecated tokens
+from sei.price.ez_prices_hourly
+limit 2;
+
+Schema: gov
+ Tables:
+    fact_governance_proposal_deposits,
+select 
+depositor, -- address making deposit
+proposal_id, -- unique identifier of proposal
+amount, -- deposit amount
+currency -- deposit currency (typically usei)
+from sei.gov.fact_governance_proposal_deposits
+limit 2;
+
+    fact_governance_submit_proposal,
+select 
+proposer, -- address submitting proposal
+proposal_id, -- unique identifier of proposal
+proposal_type, -- type of proposal
+proposal_title, -- title of proposal
+proposal_description -- detailed proposal description
+from sei.gov.fact_governance_submit_proposal
+limit 2;
+
+    fact_governance_votes,
+select 
+voter, -- address casting vote
+proposal_id, -- unique identifier of proposal
+vote_option, -- voting choice
+vote_weight, -- weight of vote
+memo -- optional vote comment
+from sei.gov.fact_governance_votes
+limit 2;
+
+    fact_staking,
+select 
+tx_caller_address, -- address initiating staking action
+action, -- type of staking action
+delegator_address, -- address delegating tokens
+validator_address, -- validator receiving delegation
+redelegate_source_validator_address, -- source validator for redelegations
+amount, -- amount staked
+currency, -- staking currency (typically usei)
+completion_time -- timestamp for action completion
+from sei.gov.fact_staking
+limit 2;
+
+    fact_staking_rewards,
+select 
+tx_caller_address, -- address claiming rewards
+action, -- type of reward action
+delegator_address, -- address receiving rewards
+rewards_recipient, -- address receiving rewards (typically same as delegator)
+validator_address, -- validator rewards are from
+amount, -- reward amount
+currency -- reward currency (typically usei)
+from sei.gov.fact_staking_rewards
+limit 2;

@@ -1,0 +1,114 @@
+Context for how to understand labels & label subtypes
+
+-- Labels & Subtypes 
+cex (Centralized Exchange)
+  label_type = cex
+  label_subtypes:
+  hot_wallet - Centralized exchange hot wallets -- addresses that collect funds from deposit wallets, send withdrawals to customers, and hold the majority of the exchange’s funds
+  deposit_wallet - Centralized exchange deposit wallets
+  cold_wallet - A wallet used to hold rarely used funds belonging to the exchange
+  chadmin - A administration address belonging to the exchange
+  contract_deployer - A contract belonging to the exchange that is used to create other contracts
+  general_contract- A general use contract belonging to the exchange
+  multisig - A general use multisig wallet belonging to the exchange
+  token_contract - Contract of a token owned by the exchange
+dex (Decentralized Exchange)
+  label_type = dex
+  label_subtypes:
+  swap_contract - The contract used by the dex to facilitate token exchanges
+  token_contract - Contract of a token belonging to the decentralized exchange
+  pool - Any type of pool address, i.e. farming, staking, liquidity etc.
+  vault - A vault controlled by the decentalized exchange
+  fee_wallet - Wallet for fees collected by the decentalized exchange
+  dao - An address controlling a DAO controlled by the decentalized exchange
+  chadmin - Addresses used for administrative purposes controlled by the decentalized exchange
+  contract_deployer - A contract controlled by the decentralized exchange that is used to create other contracts
+  foundation - Foundation addresses where the decentralized exchange has a foundation
+  governance - Governance addresses where the decentralized exchange has governance
+  rewards - Addresses used to distribute rewards
+  strategy - Addresses used to control strategy
+  token_distribution - Addresses used to distribute supply
+  token_sale - Addresses used in initial token sales and distributions
+  general_contract - A contract belonging to the exchange
+  multisig - A multisig contract belonging to the decentralized exchange
+operator (Chain Operations)
+  label_type = operator
+  label_subtypes:
+  validator - Addresses that run nodes and/or validate blocks
+  mining_pool - Known mining pools
+  solo_miner - An individual address that has received block rewards
+chadmin (Chain Administration)
+  label_type = chadmin
+  label_subtypes:
+  genesis - The mint or burn addresses of a chain (the all 0's address on Ethereum)
+  foundation - Addresses used by the chain foundation
+  general_contract - Other chadmin contracts
+defi (Decentralized Finance Applications)
+  label_type = defi
+  label_subtypes:
+  token_contract - Contract of a token belonging to the defi project
+  pool - Any type of pool address, i.e. farming, staking, liquidity etc.
+  vault - A vault controlled by the defi project
+  fee_wallet - Wallet for fees collected by the defi project
+  dao - An address controlling a DAO controlled by the defi project
+  voting - Address controlled by the defi project used for voting
+  chadmin - Addresses used for administrative purposes controlled by the defi project
+  contract_deployer - A contract controlled by the defi project that is used to create other contracts
+  treasury - Treasury addresses where the defi project has a treasury
+  governance - Governance addresses where the defi project has governance
+  rewards - Addresses used to distribute rewards
+  oracle - A contract used as an oracle by the defi project
+  token_sale - Addresses used in initial token sales and distributions
+  general_contract - A contract belonging to the defi project
+  multisig - A multisig contract belonging to the defi project
+nft (NonFungible Token Contracts & Applications)
+  label_type = nft
+  label_subtypes:
+  token_contract - ERC-20 token (fungible token) contract owned by the nft project or marketplace
+  nf_token_contract - NonFungible token contract owned by the nft project or marketplace
+  contract_deployer - A contract used by the project to create other contracts
+  fee_contract - A contract used by the project to collect fees
+  marketplace - A contract used by a marketplace to facilitate sales and trades of nft's
+  general_contract - A contract controlled by the nft project or marketplace
+bridge (Layer 2/ alt L1 Dapps)
+  label_type = bridge
+  label_subtypes:
+  token_contract - ERC-20 token (fungible token) contract owned by the layer two project
+  general_contract - A contract controlled by the layer two project
+dapp (Decentralized Applications)
+  label_type = dapp
+  label_subtypes:
+  contract_deployer - Non-exchange financial services such as mixers and payment services
+  fee_wallet - Walled used by the dapp to collect fees
+  token_contract - Contract of a token belonging to the dapp
+  token_sale - Address used in the initial token sale of a token belonging to the dapp
+  treasury - Address used by the treasury of the dapp
+  oracle - Oracle contract
+  donation_address - Address used by the dapp to collect donations
+  aggregator_contract - Aggregator contract
+games (Gaming Dapps)
+  label_type = games
+  label_subtypes:
+  airdrop_contract - A contract used to distribute airdrop tokens
+  chadmin - A administration address belonging to the game
+  contract_deployer - A contract controlled by the game that is used to create other contracts
+  dao - An address controlling a DAO controlled by the game
+  general_contract - A contract belonging to the game
+  marketplace - A contract used by a marketplace to facilitate sales and trades of nft's
+  nf_token_contract - NonFungible token contract owned by the game
+  oracle - A contract used as an oracle by the game
+  rewards - Addresses used to distribute rewards
+  token_contract - Contract of a token belonging to the game
+  treasury - Treasury addresses of the game
+token (Token Contracts)
+  label_type = tokens
+  label_subtypes: 
+  token_contract - ERC-20 token (fungible token) contract 
+flotsam (Junk or Other)
+label_type = flotsam
+  label_subtypes:
+  toxic - Scams, pyramid schemes, bad bots, attacks, hackers, etc.
+  token_contract - ERC-20 token (fungible token) contract
+  general_contract - A general contract
+  contract_deployer - A contract used to create other contracts
+  donation_address - Addresses used to collect donations
